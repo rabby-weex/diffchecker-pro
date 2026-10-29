@@ -1,0 +1,8 @@
+# DiffChecker Pro 核心依赖说明
+#
+# 架构原则：零沉重外部依赖！
+# 本项目使用 Python 3 标准库（http.server, urllib, json, subprocess, fcntl 等）即可完整运行。
+# 无需通过 pip 安装额外包，避免因 C 扩展、网络阻断导致的安装失败。
+#
+# 仅需 Python 3.7+ 环境即可直接运行：
+# python3 server.py

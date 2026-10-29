@@ -1,0 +1,3472 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DiffChecker Pro · 纯净代码对比与 AI 智能诊断</title>
+<style>
+/* ============================================================
+   Reset & Variables
+============================================================ */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --primary: #10a37f;
+  --primary-hover: #0d8a6a;
+  --ai-purple: #6366f1;
+  --ai-purple-hover: #4f46e5;
+  --bg-app: #f8fafc;
+  --border-color: #e2e8f0;
+  --text-main: #0f172a;
+  --text-muted: #64748b;
+  --diff-del-bg: #fee2e2;
+  --diff-del-text: #b91c1c;
+  --diff-ins-bg: #dcfce7;
+  --diff-ins-text: #15803d;
+  --diff-mod-bg: #fef3c7;
+  --diff-mod-text: #b45309;
+}
+html, body {
+  height: 100%;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  background: var(--bg-app);
+  color: var(--text-main);
+  overflow: hidden;
+}
+
+#app {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+}
+
+/* ============================================================
+   Top Navbar (Navigation & Tabs)
+============================================================ */
+#navbar {
+  height: 56px;
+  background: #ffffff;
+  border-bottom: 1px solid var(--border-color);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 20px;
+  flex-shrink: 0;
+  z-index: 20;
+}
+.brand-group {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+.logo-box {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  user-select: none;
+}
+.logo-icon {
+  width: 32px;
+  height: 32px;
+  background: var(--primary);
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-weight: 800;
+  font-size: 15px;
+  letter-spacing: -0.5px;
+  box-shadow: 0 2px 6px rgba(16, 163, 127, 0.25);
+}
+.brand-text {
+  font-size: 18px;
+  font-weight: 700;
+  color: #0f172a;
+  letter-spacing: -0.3px;
+}
+.brand-badge {
+  font-size: 11px;
+  font-weight: 700;
+  background: #ecfdf5;
+  color: #059669;
+  border: 1px solid #a7f3d0;
+  padding: 2px 7px;
+  border-radius: 12px;
+}
+
+/* Nav Tabs */
+.nav-tabs {
+  display: flex;
+  gap: 4px;
+  background: #f1f5f9;
+  padding: 3px;
+  border-radius: 8px;
+}
+.nav-tab {
+  padding: 6px 14px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #64748b;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.18s ease;
+  user-select: none;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+.nav-tab:hover {
+  color: #1e293b;
+  background: rgba(255, 255, 255, 0.6);
+}
+.nav-tab.active {
+  background: #ffffff;
+  color: #0f172a;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+}
+
+/* Nav Right Actions */
+.nav-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+#codex-btn {
+  padding: 7px 18px;
+  border-radius: 8px;
+  border: none;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  letter-spacing: 0.3px;
+  background: linear-gradient(135deg, #6366f1, #8b5cf6);
+  color: white;
+  box-shadow: 0 2px 8px rgba(99,102,241,0.35);
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  transition: all 0.18s ease;
+}
+#codex-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 14px rgba(99,102,241,0.48);
+  filter: brightness(1.08);
+}
+.live-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #4ade80;
+  box-shadow: 0 0 6px #4ade80;
+}
+
+/* ============================================================
+   Action Toolbar (Subheader for Text Diff)
+============================================================ */
+#action-bar {
+  height: 50px;
+  background: #ffffff;
+  border-bottom: 1px solid var(--border-color);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 20px;
+  flex-shrink: 0;
+  z-index: 10;
+}
+.view-mode-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.view-btn {
+  padding: 6px 14px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  border: 1px solid #cbd5e1;
+  background: #ffffff;
+  color: #475569;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.view-btn.active {
+  background: #0f172a;
+  color: #ffffff;
+  border-color: #0f172a;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+.find-diff-btn {
+  padding: 7px 20px;
+  background: #10a37f;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  box-shadow: 0 2px 6px rgba(16,163,127,0.3);
+  transition: all 0.15s;
+}
+.find-diff-btn:hover {
+  background: #0d8a6a;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 10px rgba(16,163,127,0.4);
+}
+.find-diff-btn:active {
+  transform: translateY(0);
+}
+.options-group {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  font-size: 12px;
+  color: #475569;
+}
+.options-group label {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  cursor: pointer;
+}
+.options-group input[type="checkbox"] {
+  accent-color: #10a37f;
+}
+
+/* ============================================================
+   Floating Diff Jump Toast / Navigator
+============================================================ */
+#diff-nav-toast {
+  position: absolute;
+  top: 112px;
+  right: 24px;
+  background: #ffffff;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.12);
+  padding: 6px 14px;
+  display: none;
+  align-items: center;
+  gap: 10px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #334155;
+  z-index: 30;
+  animation: fadeInDown 0.2s ease-out;
+}
+#diff-nav-toast.show {
+  display: flex;
+}
+@keyframes fadeInDown {
+  from { opacity: 0; transform: translateY(-8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.diff-nav-btn {
+  background: #f1f5f9;
+  border: 1px solid #cbd5e1;
+  border-radius: 4px;
+  padding: 3px 8px;
+  font-size: 11px;
+  cursor: pointer;
+  color: #334155;
+  transition: all 0.15s;
+}
+.diff-nav-btn:hover {
+  background: #e2e8f0;
+}
+
+/* ============================================================
+   Main Container Area (Tab Views)
+============================================================ */
+#content-container {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  position: relative;
+}
+.tab-view {
+  flex: 1;
+  display: none;
+  flex-direction: column;
+  overflow: hidden;
+}
+.tab-view.active {
+  display: flex;
+}
+
+/* ============================================================
+   1. Text Workspace (Split & Unified)
+============================================================ */
+#workspace {
+  flex: 1;
+  display: flex;
+  overflow: hidden;
+  background: #ffffff;
+}
+.pane {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  border-right: 1px solid var(--border-color);
+}
+.pane:last-child {
+  border-right: none;
+}
+.pane-topbar {
+  height: 40px;
+  background: #f8fafc;
+  border-bottom: 1px solid var(--border-color);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 12px;
+  flex-shrink: 0;
+}
+.pane-title-group {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.pane-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: #334155;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* Header AI Analysis Button */
+.ai-analyze-btn {
+  background: linear-gradient(135deg, #4f46e5, #7c3aed);
+  color: #ffffff;
+  border: none;
+  border-radius: 6px;
+  padding: 4px 10px;
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  box-shadow: 0 1px 4px rgba(99,102,241,0.3);
+  transition: all 0.15s ease;
+}
+.ai-analyze-btn:hover {
+  background: linear-gradient(135deg, #4338ca, #6d28d9);
+  transform: translateY(-1px);
+  box-shadow: 0 3px 8px rgba(99,102,241,0.45);
+}
+.ai-analyze-btn:active {
+  transform: translateY(0);
+}
+.sparkle-icon {
+  font-size: 12px;
+  filter: drop-shadow(0 0 2px #fde047);
+}
+
+.pane-meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 11px;
+  color: #64748b;
+}
+.pane-tool-btn {
+  background: transparent;
+  border: none;
+  color: #64748b;
+  font-size: 11px;
+  cursor: pointer;
+  padding: 3px 7px;
+  border-radius: 4px;
+  transition: all 0.12s;
+}
+.pane-tool-btn:hover {
+  background: #e2e8f0;
+  color: #0f172a;
+}
+
+/* Editor & Line Numbers */
+.editor-container {
+  flex: 1;
+  display: flex;
+  overflow: hidden;
+  position: relative;
+}
+.line-numbers {
+  min-width: 44px;
+  padding: 10px 0;
+  background: #f8fafc;
+  border-right: 1px solid var(--border-color);
+  text-align: right;
+  font-size: 13px;
+  font-family: "SF Mono", Menlo, Monaco, Consolas, monospace;
+  color: #94a3b8;
+  line-height: 22px;
+  overflow: hidden;
+  flex-shrink: 0;
+  user-select: none;
+  box-sizing: border-box;
+}
+.line-numbers div {
+  height: 22px;
+  line-height: 22px;
+  padding: 0 8px;
+  box-sizing: border-box;
+}
+.line-numbers div.ln-del {
+  background: #fee2e2;
+  color: #dc2626;
+  font-weight: bold;
+}
+.line-numbers div.ln-ins {
+  background: #dcfce7;
+  color: #16a34a;
+  font-weight: bold;
+}
+.code-editor {
+  flex: 1;
+  padding: 10px 14px;
+  overflow: auto;
+  font-size: 13px;
+  font-family: "SF Mono", Menlo, Monaco, Consolas, monospace;
+  line-height: 22px;
+  white-space: pre;
+  border: none;
+  outline: none;
+  resize: none;
+  background: #ffffff;
+  color: #1e293b;
+  tab-size: 4;
+}
+
+/* Gutter */
+#gutter-col {
+  width: 32px;
+  background: #f8fafc;
+  border-right: 1px solid var(--border-color);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding-top: 12px;
+  flex-shrink: 0;
+}
+.gutter-btn {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  border: 1px solid #cbd5e1;
+  background: #ffffff;
+  color: #64748b;
+  font-size: 12px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.06);
+  transition: all 0.15s;
+}
+.gutter-btn:hover {
+  background: #0f172a;
+  color: white;
+  border-color: #0f172a;
+}
+
+/* Unified View Container */
+#unified-workspace {
+  flex: 1;
+  display: none;
+  overflow: auto;
+  background: #ffffff;
+  font-family: "SF Mono", Menlo, Monaco, Consolas, monospace;
+  font-size: 13px;
+  line-height: 22px;
+}
+.unified-row {
+  display: flex;
+  min-width: 100%;
+}
+.unified-row.del {
+  background: var(--diff-del-bg);
+  color: var(--diff-del-text);
+}
+.unified-row.ins {
+  background: var(--diff-ins-bg);
+  color: var(--diff-ins-text);
+}
+.unified-ln-col {
+  width: 50px;
+  text-align: right;
+  padding: 0 8px;
+  color: #94a3b8;
+  background: #f8fafc;
+  border-right: 1px solid var(--border-color);
+  user-select: none;
+  flex-shrink: 0;
+}
+.unified-marker {
+  width: 24px;
+  text-align: center;
+  user-select: none;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+.unified-content {
+  flex: 1;
+  padding: 0 12px;
+  white-space: pre;
+}
+
+/* ============================================================
+   2. Images Diff View (Images 图像对比)
+============================================================ */
+#view-images {
+  background: #f1f5f9;
+}
+.sub-toolbar {
+  height: 46px;
+  background: #ffffff;
+  border-bottom: 1px solid var(--border-color);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 20px;
+  flex-shrink: 0;
+}
+.sub-toolbar-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.image-stage {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  overflow: hidden;
+  padding: 20px;
+}
+/* Slider Mode */
+.img-slider-box {
+  position: relative;
+  max-width: 90%;
+  max-height: 90%;
+  box-shadow: 0 8px 30px rgba(0,0,0,0.15);
+  border-radius: 8px;
+  overflow: hidden;
+  background: repeating-conic-gradient(#f8fafc 0% 25%, #e2e8f0 0% 50%) 50% / 16px 16px;
+  user-select: none;
+}
+.img-slider-box img {
+  display: block;
+  max-width: 100%;
+  max-height: 70vh;
+  object-fit: contain;
+  pointer-events: none;
+}
+.img-layer-top {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+}
+.img-slider-handle {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 3px;
+  background: #10a37f;
+  cursor: ew-resize;
+  z-index: 5;
+  box-shadow: 0 0 8px rgba(0,0,0,0.4);
+}
+.img-slider-button {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 32px;
+  height: 32px;
+  background: #10a37f;
+  color: white;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  font-weight: bold;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+}
+/* Side by Side Mode */
+.img-side-box {
+  display: none;
+  gap: 20px;
+  width: 100%;
+  height: 100%;
+  align-items: center;
+  justify-content: center;
+}
+.img-side-card {
+  flex: 1;
+  max-width: 600px;
+  height: 85%;
+  background: #ffffff;
+  border-radius: 8px;
+  border: 1px solid var(--border-color);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.06);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+.img-card-header {
+  height: 36px;
+  background: #f8fafc;
+  border-bottom: 1px solid var(--border-color);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 12px;
+  font-size: 12px;
+  font-weight: 700;
+  color: #334155;
+}
+.img-card-body {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 12px;
+  background: repeating-conic-gradient(#f8fafc 0% 25%, #e2e8f0 0% 50%) 50% / 16px 16px;
+}
+.img-card-body img {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+}
+/* Empty Dropzone */
+.empty-dropzone {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 480px;
+  height: 260px;
+  border: 2px dashed #cbd5e1;
+  border-radius: 12px;
+  background: #ffffff;
+  color: #64748b;
+  cursor: pointer;
+  transition: all 0.2s;
+  padding: 24px;
+  text-align: center;
+}
+.empty-dropzone:hover {
+  border-color: #10a37f;
+  background: #f0fdf4;
+  color: #10a37f;
+}
+
+/* ============================================================
+   3. PDF Diff View (PDF 对比)
+============================================================ */
+#view-pdf {
+  background: #ffffff;
+}
+.pdf-workspace {
+  flex: 1;
+  display: flex;
+  overflow: hidden;
+}
+.pdf-pane {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  border-right: 1px solid var(--border-color);
+}
+.pdf-pane:last-child {
+  border-right: none;
+}
+.pdf-editor {
+  flex: 1;
+  padding: 14px;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  font-size: 13px;
+  line-height: 1.6;
+  border: none;
+  outline: none;
+  resize: none;
+  overflow: auto;
+}
+
+/* ============================================================
+   4. Folder Diff View (Folder 目录对比)
+============================================================ */
+#view-folder {
+  background: #ffffff;
+}
+.folder-header-stats {
+  padding: 10px 20px;
+  background: #f8fafc;
+  border-bottom: 1px solid var(--border-color);
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  font-size: 13px;
+  font-weight: 600;
+}
+.folder-tree-box {
+  flex: 1;
+  overflow: auto;
+}
+.folder-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+.folder-table th {
+  background: #f8fafc;
+  border-bottom: 1px solid var(--border-color);
+  padding: 8px 16px;
+  text-align: left;
+  font-weight: 700;
+  color: #475569;
+}
+.folder-table td {
+  padding: 9px 16px;
+  border-bottom: 1px solid #f1f5f9;
+  color: #1e293b;
+}
+.folder-table tr:hover {
+  background: #f8fafc;
+}
+.badge-status {
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 700;
+}
+.badge-added { background: #dcfce7; color: #15803d; }
+.badge-deleted { background: #fee2e2; color: #b91c1c; }
+.badge-modified { background: #fef3c7; color: #b45309; }
+.badge-same { background: #f1f5f9; color: #64748b; }
+
+/* ============================================================
+   5. Excel Spreadsheet Diff View (Excel 表格对比)
+============================================================ */
+#view-excel {
+  background: #ffffff;
+}
+.excel-table-container {
+  flex: 1;
+  overflow: auto;
+  padding: 12px;
+}
+.excel-diff-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+  font-family: -apple-system, BlinkMacSystemFont, "SF Mono", monospace;
+}
+.excel-diff-table th, .excel-diff-table td {
+  border: 1px solid #cbd5e1;
+  padding: 6px 12px;
+  text-align: left;
+}
+.excel-diff-table th {
+  background: #f1f5f9;
+  font-weight: 700;
+  color: #334155;
+}
+.excel-row-del { background: #fee2e2 !important; color: #991b1b; }
+.excel-row-ins { background: #dcfce7 !important; color: #166534; }
+.excel-cell-mod {
+  background: #fef3c7 !important;
+  color: #92400e;
+  font-weight: 700;
+  border: 2px solid #f59e0b !important;
+}
+
+/* ============================================================
+   Status Bar
+============================================================ */
+#statusbar {
+  height: 32px;
+  background: #ffffff;
+  border-top: 1px solid var(--border-color);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 16px;
+  font-size: 11px;
+  color: #64748b;
+  flex-shrink: 0;
+  z-index: 10;
+}
+.stat-pill {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.stat-tag-del { color: #dc2626; font-weight: 600; }
+.stat-tag-ins { color: #16a34a; font-weight: 600; }
+
+/* ============================================================
+   AI ANALYSIS MODAL (点击 AI 分析按钮后弹出的深度分析抽屉)
+============================================================ */
+#ai-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.65);
+  backdrop-filter: blur(5px);
+  z-index: 999;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
+#ai-modal-overlay.show {
+  display: flex;
+}
+#ai-analysis-card {
+  width: 95%;
+  max-width: 1200px;
+  height: 88vh;
+  background: #ffffff;
+  border-radius: 14px;
+  box-shadow: 0 20px 50px rgba(0,0,0,0.35);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  border: 1px solid #cbd5e1;
+}
+.ai-modal-hdr {
+  height: 60px;
+  background: #0f172a;
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 24px;
+  flex-shrink: 0;
+}
+.ai-hdr-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.ai-pulse-badge {
+  background: rgba(99,102,241,0.25);
+  color: #a5b4fc;
+  border: 1px solid rgba(99,102,241,0.4);
+  font-size: 11px;
+  font-weight: 700;
+  padding: 3px 8px;
+  border-radius: 12px;
+}
+.ai-target-selector-box {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(30, 41, 59, 0.9);
+  border: 1px solid rgba(99, 102, 241, 0.45);
+  padding: 5px 12px;
+  border-radius: 8px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25);
+  transition: all 0.15s ease;
+}
+.ai-target-selector-box:hover {
+  border-color: rgba(99, 102, 241, 0.8);
+  background: rgba(30, 41, 59, 1);
+}
+.ai-target-label-text {
+  font-size: 12px;
+  font-weight: 700;
+  color: #a5b4fc;
+  letter-spacing: 0.3px;
+  user-select: none;
+  white-space: nowrap;
+}
+.ai-target-dropdown {
+  background: transparent;
+  color: #f8fafc;
+  border: none;
+  outline: none;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  padding: 2px 4px;
+}
+.ai-target-dropdown option {
+  background: #0f172a;
+  color: #f8fafc;
+  font-weight: 600;
+  padding: 6px;
+}
+.ai-modal-title {
+  font-size: 16px;
+  font-weight: 700;
+  letter-spacing: -0.2px;
+}
+.ai-modal-subtitle {
+  font-size: 11px;
+  color: #94a3b8;
+}
+.ai-hdr-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.ai-hdr-btn {
+  background: rgba(255,255,255,0.12);
+  border: 1px solid rgba(255,255,255,0.18);
+  color: white;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 6px 14px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.15s;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.ai-hdr-btn:hover {
+  background: rgba(255,255,255,0.22);
+}
+.ai-close-btn {
+  background: transparent;
+  border: none;
+  color: #94a3b8;
+  font-size: 20px;
+  cursor: pointer;
+  padding: 4px;
+  line-height: 1;
+}
+.ai-close-btn:hover {
+  color: white;
+}
+
+/* AI Sub-navigation Tabs */
+.ai-tab-strip {
+  height: 44px;
+  background: #f8fafc;
+  border-bottom: 1px solid var(--border-color);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 20px;
+  flex-shrink: 0;
+}
+.ai-nav-pills {
+  display: flex;
+  gap: 6px;
+}
+.ai-pill {
+  padding: 6px 14px;
+  font-size: 12px;
+  font-weight: 700;
+  border-radius: 6px;
+  color: #64748b;
+  cursor: pointer;
+  transition: all 0.15s;
+  user-select: none;
+}
+.ai-pill:hover {
+  color: #1e293b;
+}
+.ai-pill.active {
+  background: #ffffff;
+  color: #4f46e5;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+  border: 1px solid #e2e8f0;
+}
+.ai-model-picker {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  color: #475569;
+}
+.ai-model-select {
+  padding: 4px 10px;
+  border-radius: 6px;
+  border: 1px solid #cbd5e1;
+  font-size: 12px;
+  font-weight: 600;
+  background: #ffffff;
+  color: #0f172a;
+}
+
+/* AI Body Content */
+.ai-modal-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 24px;
+  background: #f8fafc;
+}
+.ai-loading-box {
+  display: none;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 380px;
+  gap: 18px;
+}
+.ai-loading-box.show {
+  display: flex;
+}
+.ai-spinner {
+  width: 44px;
+  height: 44px;
+  border: 4px solid #e2e8f0;
+  border-top-color: #6366f1;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+.ai-loading-text {
+  font-size: 14px;
+  font-weight: 600;
+  color: #334155;
+}
+.ai-loading-sub {
+  font-size: 12px;
+  color: #64748b;
+}
+
+/* Step Timeline Cards */
+.step-card {
+  background: #ffffff;
+  border: 1px solid var(--border-color);
+  border-radius: 10px;
+  padding: 16px 20px;
+  margin-bottom: 14px;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.02);
+  display: flex;
+  gap: 16px;
+  transition: all 0.15s;
+}
+.step-card:hover {
+  box-shadow: 0 4px 14px rgba(0,0,0,0.06);
+  border-color: #cbd5e1;
+}
+.step-badge-col {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  flex-shrink: 0;
+}
+.step-num-circle {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #4f46e5, #6366f1);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  font-size: 13px;
+  box-shadow: 0 2px 6px rgba(99,102,241,0.3);
+}
+.step-content-col {
+  flex: 1;
+}
+.step-header {
+  font-size: 14px;
+  font-weight: 700;
+  color: #0f172a;
+  margin-bottom: 6px;
+}
+.step-desc {
+  font-size: 13px;
+  line-height: 1.7;
+  color: #334155;
+  white-space: normal;
+  word-break: break-word;
+}
+.step-desc p, .raw-markdown-view p {
+  margin-bottom: 8px;
+}
+.step-desc code, .raw-markdown-view code {
+  background: #eef2ff;
+  color: #4338ca;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-family: "SF Mono", Menlo, monospace;
+  font-size: 12px;
+}
+.step-desc pre, .raw-markdown-view pre {
+  background: #0f172a;
+  color: #f8fafc;
+  padding: 12px;
+  border-radius: 8px;
+  overflow-x: auto;
+  margin: 10px 0;
+  font-size: 12px;
+}
+.step-desc blockquote, .raw-markdown-view blockquote {
+  border-left: 3px solid #6366f1;
+  background: #f1f5f9;
+  padding: 8px 12px;
+  border-radius: 0 6px 6px 0;
+  margin: 8px 0;
+  color: #475569;
+}
+.step-desc li, .raw-markdown-view li {
+  margin-left: 18px;
+  margin-bottom: 4px;
+}
+
+/* Database Info Cards */
+.db-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 16px;
+  margin-bottom: 20px;
+}
+.db-card {
+  background: #ffffff;
+  border-radius: 10px;
+  border: 1px solid var(--border-color);
+  padding: 18px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.03);
+}
+.db-card-hdr {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid #f1f5f9;
+}
+.db-type-badge {
+  font-size: 11px;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 4px;
+  background: #ede9fe;
+  color: #6d28d9;
+}
+
+/* Env Table */
+.env-table {
+  width: 100%;
+  border-collapse: collapse;
+  background: #ffffff;
+  border-radius: 10px;
+  overflow: hidden;
+  border: 1px solid var(--border-color);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.03);
+  font-size: 13px;
+}
+.env-table th {
+  background: #f8fafc;
+  padding: 10px 16px;
+  text-align: left;
+  font-weight: 700;
+  color: #475569;
+  border-bottom: 1px solid var(--border-color);
+}
+.env-table td {
+  padding: 12px 16px;
+  border-bottom: 1px solid #f1f5f9;
+  vertical-align: top;
+}
+.env-name-tag {
+  font-family: "SF Mono", Menlo, monospace;
+  font-weight: 700;
+  color: #4338ca;
+  background: #eef2ff;
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+/* Raw Markdown Box */
+.raw-markdown-view {
+  background: #ffffff;
+  border-radius: 10px;
+  border: 1px solid var(--border-color);
+  padding: 24px;
+  font-size: 13px;
+  line-height: 1.7;
+  color: #1e293b;
+  overflow: auto;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.03);
+}
+.raw-markdown-view h3 {
+  margin: 18px 0 8px 0;
+  color: #0f172a;
+  font-size: 15px;
+  border-bottom: 1px solid #e2e8f0;
+  padding-bottom: 6px;
+}
+.raw-markdown-view ul {
+  padding-left: 20px;
+  margin-bottom: 12px;
+}
+.raw-markdown-view p {
+  margin-bottom: 10px;
+}
+
+/* ============================================================
+   ORIGINAL CODEX MODAL (完整保留原有 CODEX 功能与模型选单)
+============================================================ */
+#modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.7);
+  backdrop-filter: blur(4px);
+  z-index: 100;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+#modal-overlay.show {
+  display: flex;
+}
+#modal {
+  width: 95%;
+  max-width: 1240px;
+  height: 90vh;
+  background: #0d1117;
+  border: 1px solid #30363d;
+  border-radius: 12px;
+  box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  color: #e6edf3;
+}
+#modal-header {
+  height: 60px;
+  background: #161b22;
+  border-bottom: 1px solid #30363d;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 20px;
+  flex-shrink: 0;
+}
+.modal-title-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.modal-badge {
+  background: #1f6feb;
+  color: white;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 10px;
+}
+.modal-title {
+  font-size: 15px;
+  font-weight: 700;
+  color: #f0f6fc;
+}
+.modal-subtitle {
+  font-size: 11px;
+  color: #8b949e;
+}
+.header-action-group {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.chatgpt-app-btn {
+  background: linear-gradient(135deg, #10a37f, #059669);
+  color: white;
+  border: none;
+  border-radius: 6px;
+  padding: 6px 14px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+#modal-close {
+  background: transparent;
+  border: none;
+  color: #8b949e;
+  font-size: 20px;
+  cursor: pointer;
+}
+#settings-drawer {
+  background: #161b22;
+  border-bottom: 1px solid #30363d;
+  padding: 10px 20px;
+  font-size: 12px;
+  color: #8b949e;
+  display: none;
+  gap: 10px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+#settings-drawer.open {
+  display: flex;
+}
+#settings-drawer input {
+  background: #0d1117;
+  border: 1px solid #30363d;
+  color: #c9d1d9;
+  border-radius: 4px;
+  padding: 4px 8px;
+  font-size: 12px;
+}
+.save-settings-btn {
+  background: #238636;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  padding: 4px 10px;
+  font-size: 12px;
+  cursor: pointer;
+}
+#modal-body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  padding: 16px;
+  gap: 16px;
+}
+#panels-row {
+  height: 240px;
+  display: flex;
+  gap: 16px;
+  flex-shrink: 0;
+}
+.analysis-panel {
+  flex: 1;
+  background: #161b22;
+  border: 1px solid #30363d;
+  border-radius: 8px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+.panel-title {
+  height: 36px;
+  background: #21262d;
+  border-bottom: 1px solid #30363d;
+  padding: 0 12px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  font-weight: 700;
+}
+.panel-title.blue { color: #58a6ff; }
+.panel-title.red { color: #f85149; }
+.dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+}
+.dot.blue { background: #58a6ff; }
+.dot.red { background: #f85149; }
+#steps-list, #failure-panel {
+  flex: 1;
+  overflow-y: auto;
+  padding: 12px;
+  font-size: 12px;
+}
+.step-item {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 10px;
+  line-height: 1.4;
+}
+.step-tag {
+  padding: 1px 6px;
+  border-radius: 4px;
+  font-size: 10px;
+  font-weight: 700;
+}
+.step-tag.ok { background: #238636; color: white; }
+.step-tag.warn { background: #d29922; color: black; }
+.step-tag.idle { background: #30363d; color: #8b949e; }
+.fail-box {
+  background: rgba(248,81,73,0.1);
+  border: 1px solid rgba(248,81,73,0.3);
+  border-radius: 6px;
+  padding: 10px;
+  margin-bottom: 10px;
+}
+.fail-title {
+  color: #f85149;
+  font-weight: 700;
+  margin-bottom: 4px;
+}
+
+/* Chat Section */
+#chat-section {
+  flex: 1;
+  background: #161b22;
+  border: 1px solid #30363d;
+  border-radius: 8px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+#chat-header {
+  height: 38px;
+  background: #21262d;
+  border-bottom: 1px solid #30363d;
+  padding: 0 12px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.chat-controls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.model-select-header {
+  background: #0d1117;
+  color: #58a6ff;
+  border: 1px solid #388bfd;
+  border-radius: 6px;
+  padding: 3px 8px;
+  font-size: 11px;
+  font-weight: 700;
+  outline: none;
+  cursor: pointer;
+}
+.pill-btn {
+  background: #30363d;
+  color: #c9d1d9;
+  border-radius: 4px;
+  padding: 2px 8px;
+  font-size: 11px;
+  cursor: pointer;
+}
+#chat-messages {
+  flex: 1;
+  overflow-y: auto;
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.msg {
+  display: flex;
+  gap: 10px;
+  font-size: 13px;
+  line-height: 1.5;
+}
+.msg.user {
+  flex-direction: row-reverse;
+}
+.msg-avatar {
+  width: 26px;
+  height: 26px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+.msg.user .msg-avatar { background: #1f6feb; color: white; }
+.msg.bot .msg-avatar { background: #238636; color: white; }
+.msg-bubble {
+  max-width: 80%;
+  padding: 8px 12px;
+  border-radius: 8px;
+  word-break: break-word;
+}
+.msg.user .msg-bubble { background: #1f6feb; color: white; }
+.msg.bot .msg-bubble { background: #21262d; color: #c9d1d9; border: 1px solid #30363d; }
+#chat-quick-actions {
+  display: flex;
+  gap: 8px;
+  padding: 8px 12px;
+  background: #161b22;
+  border-top: 1px solid #30363d;
+}
+.quick-btn {
+  background: #21262d;
+  border: 1px solid #30363d;
+  color: #c9d1d9;
+  border-radius: 12px;
+  padding: 4px 10px;
+  font-size: 11px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.quick-btn:hover {
+  background: #30363d;
+  color: white;
+}
+#chat-input-bar {
+  display: flex;
+  gap: 8px;
+  padding: 10px 12px;
+  background: #21262d;
+  border-top: 1px solid #30363d;
+}
+#chat-input {
+  flex: 1;
+  background: #0d1117;
+  border: 1px solid #30363d;
+  border-radius: 6px;
+  color: #c9d1d9;
+  padding: 6px 10px;
+  font-size: 13px;
+  outline: none;
+}
+#chat-send-btn {
+  background: #238636;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  padding: 0 16px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+</style>
+</head>
+<body>
+
+<div id="app">
+
+  <!-- ============================================================
+       DIFFCHECKER TOP NAVBAR
+  ============================================================ -->
+  <header id="navbar">
+    <div class="brand-group">
+      <div class="logo-box" onclick="switchNavTab('text')">
+        <div class="logo-icon">D</div>
+        <span class="brand-text">DiffChecker</span>
+        <span class="brand-badge">Pro 纯净版</span>
+      </div>
+
+      <!-- Top Interactive Navigation Tabs -->
+      <nav class="nav-tabs">
+        <div class="nav-tab active" data-tab="text" onclick="switchNavTab('text')">
+          <span>📄</span> Text 代码对比
+        </div>
+        <div class="nav-tab" data-tab="images" onclick="switchNavTab('images')">
+          <span>🖼️</span> Images 图像对比
+        </div>
+        <div class="nav-tab" data-tab="pdf" onclick="switchNavTab('pdf')">
+          <span>📕</span> PDF 对比
+        </div>
+        <div class="nav-tab" data-tab="folder" onclick="switchNavTab('folder')">
+          <span>📁</span> Folder 目录对比
+        </div>
+        <div class="nav-tab" data-tab="excel" onclick="switchNavTab('excel')">
+          <span>📊</span> Excel 表格
+        </div>
+      </nav>
+    </div>
+
+    <!-- Right Header Actions (保留 Codex 按钮) -->
+    <div class="nav-actions">
+      <button class="hdr-btn" id="codex-btn" onclick="openCodexModal()">
+        <span class="live-dot"></span>
+        <span>Codex</span>
+      </button>
+    </div>
+  </header>
+
+  <!-- ============================================================
+       TOOLBAR (Text Diff Action Toolbar)
+  ============================================================ -->
+  <section id="action-bar">
+    <div class="view-mode-group">
+      <button class="view-btn active" id="btn-split" onclick="setViewMode('split')">Split 分屏视图</button>
+      <button class="view-btn" id="btn-unified" onclick="setViewMode('unified')">Unified 统一视图</button>
+      <button class="find-diff-btn" id="btn-find-diff" onclick="runFindDifference()">
+        <span>⚡ 查找差异 (Find Difference)</span>
+      </button>
+    </div>
+
+    <div class="options-group">
+      <label><input type="checkbox" id="sync-scroll-cb" checked onchange="syncScrollEnabled = this.checked"> 同步滚动</label>
+      <label><input type="checkbox" id="realtime-diff-cb" checked onchange="realtimeDiff = this.checked"> 实时对比</label>
+      <label><input type="checkbox" id="ignore-whitespace-cb" onchange="runDiff()"> 忽略首尾空格</label>
+    </div>
+  </section>
+
+  <!-- Floating Difference Navigator Toast -->
+  <div id="diff-nav-toast">
+    <span id="diff-nav-text">⚡ 查找完成</span>
+    <button class="diff-nav-btn" onclick="jumpPrevDiff()">▲ 上一处</button>
+    <button class="diff-nav-btn" onclick="jumpNextDiff()">▼ 下一处</button>
+    <button class="diff-nav-btn" onclick="closeDiffNav()">✕</button>
+  </div>
+
+  <!-- ============================================================
+       MAIN CONTENT CONTAINER
+  ============================================================ -->
+  <div id="content-container">
+
+    <!-- 1. Text Diff View -->
+    <div class="tab-view active" id="view-text">
+      <!-- Split Mode -->
+      <main id="workspace">
+
+        <!-- Left Pane: Original Text -->
+        <div class="pane" id="pane-left">
+          <div class="pane-topbar">
+            <div class="pane-title-group">
+              <span class="pane-title">📄 Original Text (原始文本)</span>
+              <!-- User Request: AI 分析按钮 -->
+              <button class="ai-analyze-btn" onclick="startAIAnalysis('left')">
+                <span class="sparkle-icon">✨</span>
+                <span>🤖 AI 分析</span>
+              </button>
+            </div>
+            <div class="pane-meta">
+              <span id="meta-left">0 行 · 0 字符</span>
+              <button class="pane-tool-btn" onclick="clearText('left')">清空</button>
+              <button class="pane-tool-btn" onclick="loadExample()">载入示例</button>
+            </div>
+          </div>
+          <div class="editor-container">
+            <div class="line-numbers" id="ln-left"></div>
+            <textarea class="code-editor" id="editor-left" spellcheck="false"
+              placeholder="在此粘贴或输入原始代码 / 脚本..."
+              onscroll="handleEditorScroll('left')"
+              oninput="handleInput('left')"></textarea>
+          </div>
+        </div>
+
+        <!-- Gutter -->
+        <div id="gutter-col">
+          <button class="gutter-btn" onclick="swapPanes()" title="交换左右内容">⇄</button>
+        </div>
+
+        <!-- Right Pane: Changed Text -->
+        <div class="pane" id="pane-right">
+          <div class="pane-topbar">
+            <div class="pane-title-group">
+              <span class="pane-title">📝 Changed Text (修改后文本)</span>
+              <!-- User Request: AI 分析按钮 -->
+              <button class="ai-analyze-btn" onclick="startAIAnalysis('right')">
+                <span class="sparkle-icon">✨</span>
+                <span>🤖 AI 分析</span>
+              </button>
+            </div>
+            <div class="pane-meta">
+              <span id="meta-right">0 行 · 0 字符</span>
+              <button class="pane-tool-btn" onclick="clearText('right')">清空</button>
+            </div>
+          </div>
+          <div class="editor-container">
+            <div class="line-numbers" id="ln-right"></div>
+            <textarea class="code-editor" id="editor-right" spellcheck="false"
+              placeholder="在此粘贴或输入修改后代码 / 脚本..."
+              onscroll="handleEditorScroll('right')"
+              oninput="handleInput('right')"></textarea>
+          </div>
+        </div>
+
+      </main>
+
+      <!-- Unified View Mode Container -->
+      <div id="unified-workspace"></div>
+    </div>
+
+    <!-- 2. Images Diff View (Images 图像对比) -->
+    <div class="tab-view" id="view-images">
+      <div class="sub-toolbar">
+        <div class="sub-toolbar-group">
+          <button class="view-btn active" id="btn-img-slider" onclick="setImageMode('slider')">分屏滑块 (Slider)</button>
+          <button class="view-btn" id="btn-img-side" onclick="setImageMode('side')">并排对比 (Side-by-Side)</button>
+          <button class="view-btn" id="btn-img-diff" onclick="setImageMode('diff')">差异高亮 (Difference)</button>
+        </div>
+        <div class="sub-toolbar-group">
+          <button class="pane-tool-btn" style="background:#e2e8f0; font-weight:600;" onclick="loadSampleImages()">载入图片示例</button>
+          <button class="pane-tool-btn" onclick="clearImages()">清空图片</button>
+          <button class="ai-analyze-btn" onclick="analyzeImagesWithAI()">✨ 🤖 AI 图像视觉比对</button>
+        </div>
+      </div>
+
+      <div class="image-stage" id="image-stage">
+        <!-- Empty Upload Dropzone -->
+        <div class="empty-dropzone" id="img-dropzone" onclick="triggerImageUpload()">
+          <div style="font-size:36px; margin-bottom:10px;">🖼️</div>
+          <div style="font-weight:700; font-size:15px; color:#1e293b; margin-bottom:6px;">点击或拖入两张图片进行视觉对比</div>
+          <div style="font-size:12px;">支持 PNG, JPG, WebP, SVG 等格式，或直接点击上方「载入图片示例」</div>
+          <input type="file" id="img-input-left" accept="image/*" style="display:none;" onchange="handleImageFile('left', event)">
+          <input type="file" id="img-input-right" accept="image/*" style="display:none;" onchange="handleImageFile('right', event)">
+        </div>
+
+        <!-- Slider Mode Box -->
+        <div class="img-slider-box" id="img-slider-box" style="display:none;">
+          <img id="img-base" src="" alt="Original">
+          <div class="img-layer-top" id="img-layer-top">
+            <img id="img-overlay" src="" alt="Changed">
+          </div>
+          <div class="img-slider-handle" id="img-handle">
+            <div class="img-slider-button">⇄</div>
+          </div>
+        </div>
+
+        <!-- Side-by-side Mode Box -->
+        <div class="img-side-box" id="img-side-box">
+          <div class="img-side-card">
+            <div class="img-card-header">
+              <span>🖼️ 原始图片 (Original)</span>
+              <span id="img-meta-left" style="font-size:11px; color:#64748b;">-</span>
+            </div>
+            <div class="img-card-body">
+              <img id="img-side-left" src="" alt="Original">
+            </div>
+          </div>
+          <div class="img-side-card">
+            <div class="img-card-header">
+              <span>🖼️ 修改后图片 (Changed)</span>
+              <span id="img-meta-right" style="font-size:11px; color:#64748b;">-</span>
+            </div>
+            <div class="img-card-body">
+              <img id="img-side-right" src="" alt="Changed">
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 3. PDF Diff View (PDF 对比) -->
+    <div class="tab-view" id="view-pdf">
+      <div class="sub-toolbar">
+        <div class="sub-toolbar-group">
+          <span style="font-size:13px; font-weight:700; color:#334155;">📕 PDF 文档比对器</span>
+        </div>
+        <div class="sub-toolbar-group">
+          <button class="pane-tool-btn" style="background:#e2e8f0; font-weight:600;" onclick="loadPdfExample()">载入 PDF 示例</button>
+          <button class="pane-tool-btn" onclick="clearPdf()">清空</button>
+          <button class="ai-analyze-btn" onclick="startAIAnalysis('pdf')">✨ 🤖 AI 文档差异解读</button>
+        </div>
+      </div>
+      <div class="pdf-workspace">
+        <div class="pdf-pane">
+          <div class="pane-topbar">
+            <span class="pane-title">📄 原始 PDF 文本内容</span>
+            <input type="file" id="pdf-file-left" accept=".pdf,.txt" style="display:none;" onchange="readPdfFile('left', event)">
+            <button class="pane-tool-btn" onclick="document.getElementById('pdf-file-left').click()">上传 PDF</button>
+          </div>
+          <textarea class="pdf-editor" id="pdf-left" placeholder="拖入原始 PDF 文件或直接粘贴文档文本..."></textarea>
+        </div>
+        <div class="pdf-pane">
+          <div class="pane-topbar">
+            <span class="pane-title">📝 修改后 PDF 文本内容</span>
+            <input type="file" id="pdf-file-right" accept=".pdf,.txt" style="display:none;" onchange="readPdfFile('right', event)">
+            <button class="pane-tool-btn" onclick="document.getElementById('pdf-file-right').click()">上传 PDF</button>
+          </div>
+          <textarea class="pdf-editor" id="pdf-right" placeholder="拖入修改后 PDF 文件或直接粘贴文档文本..."></textarea>
+        </div>
+      </div>
+    </div>
+
+    <!-- 4. Folder Diff View (Folder 目录对比) -->
+    <div class="tab-view" id="view-folder">
+      <div class="sub-toolbar">
+        <div class="sub-toolbar-group">
+          <input type="file" id="folder-input-left" webkitdirectory directory multiple style="display:none;" onchange="handleFolderSelect('left', event)">
+          <input type="file" id="folder-input-right" webkitdirectory directory multiple style="display:none;" onchange="handleFolderSelect('right', event)">
+          <button class="pane-tool-btn" style="background:#0f172a; color:white; font-weight:600;" onclick="document.getElementById('folder-input-left').click()">📁 选择原始文件夹</button>
+          <button class="pane-tool-btn" style="background:#0f172a; color:white; font-weight:600;" onclick="document.getElementById('folder-input-right').click()">📁 选择修改后文件夹</button>
+          <button class="pane-tool-btn" style="background:#e2e8f0; font-weight:600;" onclick="loadFolderExample()">载入目录示例</button>
+          <button class="pane-tool-btn" onclick="clearFolder()">清空</button>
+        </div>
+        <div class="sub-toolbar-group">
+          <button class="ai-analyze-btn" onclick="analyzeFolderWithAI()">✨ 🤖 AI 架构变更审计</button>
+        </div>
+      </div>
+      <div class="folder-header-stats" id="folder-stats-bar">
+        <span>📦 目录比对概览：请选择两个文件夹或点击「载入目录示例」开始分析</span>
+      </div>
+      <div class="folder-tree-box">
+        <table class="folder-table" id="folder-diff-table">
+          <thead>
+            <tr>
+              <th style="width: 100px;">状态</th>
+              <th>文件相对路径</th>
+              <th style="width: 140px;">原大小</th>
+              <th style="width: 140px;">新大小</th>
+              <th style="width: 120px;">操作</th>
+            </tr>
+          </thead>
+          <tbody id="folder-tbody">
+            <tr>
+              <td colspan="5" style="text-align:center; padding: 40px; color:#94a3b8;">
+                暂无目录数据，点击上方按钮选择本地文件夹或「载入目录示例」
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- 5. Excel Diff View (Excel 表格对比) -->
+    <div class="tab-view" id="view-excel">
+      <div class="sub-toolbar">
+        <div class="sub-toolbar-group">
+          <input type="file" id="excel-file-left" accept=".csv,.tsv,.txt" style="display:none;" onchange="handleExcelUpload('left', event)">
+          <input type="file" id="excel-file-right" accept=".csv,.tsv,.txt" style="display:none;" onchange="handleExcelUpload('right', event)">
+          <button class="pane-tool-btn" style="background:#0f172a; color:white; font-weight:600;" onclick="document.getElementById('excel-file-left').click()">📊 上传原始表格 (CSV)</button>
+          <button class="pane-tool-btn" style="background:#0f172a; color:white; font-weight:600;" onclick="document.getElementById('excel-file-right').click()">📊 上传修改后表格 (CSV)</button>
+          <button class="pane-tool-btn" style="background:#e2e8f0; font-weight:600;" onclick="loadExcelExample()">载入表格示例</button>
+          <button class="pane-tool-btn" onclick="clearExcel()">清空</button>
+        </div>
+        <div class="sub-toolbar-group">
+          <button class="ai-analyze-btn" onclick="analyzeExcelWithAI()">✨ 🤖 AI 数据变动洞察</button>
+        </div>
+      </div>
+      <div class="folder-header-stats" id="excel-stats-bar">
+        <span>📊 表格对比概览：支持标准 CSV/TSV 格式，点击上方「载入表格示例」立即体验单元格级对比</span>
+      </div>
+      <div class="excel-table-container">
+        <table class="excel-diff-table" id="excel-grid">
+          <thead>
+            <tr>
+              <th style="width:40px;">#</th>
+              <th>A (币种代码)</th>
+              <th>B (基准费率)</th>
+              <th>C (VIP费率)</th>
+              <th>D (单笔限额)</th>
+              <th>E (状态)</th>
+            </tr>
+          </thead>
+          <tbody id="excel-tbody">
+            <tr>
+              <td colspan="6" style="text-align:center; padding:40px; color:#94a3b8;">
+                暂无表格数据，点击上方「载入表格示例」查看变动单元格高亮
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Status Bar -->
+  <footer id="statusbar">
+    <div class="stat-pill">
+      <span>对比结果：</span>
+      <span class="stat-tag-del" id="stat-dels">- 0 删减</span>
+      <span>·</span>
+      <span class="stat-tag-ins" id="stat-ins">+ 0 新增</span>
+    </div>
+    <div style="color: #94a3b8;">
+      DiffChecker Pro 纯净版 · 零广告 · 本地离线引擎 · 点击顶部任意「🤖 AI 分析」启动全流程拆解
+    </div>
+  </footer>
+
+</div>
+
+<!-- ============================================================
+     AI 深度分析抽屉/弹窗 (点击「AI 分析」按钮后弹出)
+     - 全流程步骤拆解 (第一步/第二步/第三步/第四步/第五步...)
+     - 连接了哪个数据库
+     - 环境变量有哪些，是怎么配置的
+============================================================ -->
+<div id="ai-modal-overlay" onclick="closeAIModalOutside(event)">
+  <div id="ai-analysis-card">
+
+    <!-- Modal Header -->
+    <div class="ai-modal-hdr">
+      <div class="ai-hdr-left">
+        <!-- Interactive Target Dropdown (分析对象选择下拉框) -->
+        <div class="ai-target-selector-box">
+          <span class="ai-target-label-text">分析对象:</span>
+          <select id="ai-target-select" class="ai-target-dropdown" onchange="onTargetSelectChange(this.value)">
+            <option value="left">Original Text (原始代码)</option>
+            <option value="right">Changed Text (修改后代码)</option>
+            <option value="diff">⚡ 差异对比 (Diff 综合分析)</option>
+            <option value="pdf">📕 PDF 文档内容</option>
+          </select>
+        </div>
+        <div>
+          <div class="ai-modal-title">🤖 AI 代码流程与架构深度分析</div>
+          <div class="ai-modal-subtitle">全流程步骤拆解 · 数据库连接与目标表 · 环境变量清单与配置方式</div>
+        </div>
+      </div>
+      <div class="ai-hdr-actions">
+        <button class="ai-hdr-btn" onclick="copyFullReport()">
+          <span>📋 复制完整报告</span>
+        </button>
+        <button class="ai-hdr-btn" onclick="openReportInChatGPTApp()">
+          <span>🚀 在 ChatGPT APP 打开</span>
+        </button>
+        <button class="ai-close-btn" onclick="closeAIModal()">✕</button>
+      </div>
+    </div>
+
+    <!-- Sub-navigation Pills -->
+    <div class="ai-tab-strip">
+      <div class="ai-nav-pills">
+        <div class="ai-pill active" data-tab="steps" onclick="switchAIPill('steps')">📌 全流程步骤拆解</div>
+        <div class="ai-pill" data-tab="database" onclick="switchAIPill('database')">🗄 数据库连接与存储</div>
+        <div class="ai-pill" data-tab="env" onclick="switchAIPill('env')">⚙️ 环境变量与配置项</div>
+        <div class="ai-pill" data-tab="markdown" onclick="switchAIPill('markdown')">📝 完整 Markdown 报告</div>
+      </div>
+
+      <div class="ai-model-picker">
+        <span>当前模型：</span>
+        <select class="ai-model-select" id="ai-analysis-model-select" onchange="reRunAIAnalysis()">
+          <optgroup label="默认推荐模型集">
+            <option value="gpt-6.1-sol">6.1 Sol</option>
+            <option value="gpt-6-astra">6 Astra</option>
+            <option value="gpt-6-sol">6 Sol</option>
+            <option value="gpt-6-luna">6 Luna</option>
+            <option value="gpt-5.6-sol">5.6 Sol</option>
+            <option value="gpt-5.6-terra">5.6 Terra</option>
+            <option value="gpt-5.6-luna">5.6 Luna</option>
+            <option value="gpt-5.5">5.5</option>
+          </optgroup>
+          <optgroup label="Claude 系列">
+            <option value="claude-sonnet-5-5" selected>claude-sonnet-5-5</option>
+            <option value="claude-opus-5-5">claude-opus-5-5</option>
+            <option value="claude-sonnet-5">claude-sonnet-5</option>
+            <option value="claude-haiku-5-5">claude-haiku-5-5</option>
+            <option value="claude-haiku-4-5">claude-haiku-4-5</option>
+          </optgroup>
+          <optgroup label="国产模型系列">
+            <option value="deepseek-v4-pro">deepseek-v4-pro</option>
+            <option value="deepseek-v4.1-flash">Deepseek-V4.1-Flash</option>
+            <option value="deepseek-v3-pro">deepseek-v3-pro</option>
+            <option value="deepseek-v3-flash">deepseek-v3-flash</option>
+            <option value="deepseek-v4-flash">deepseek-v4-flash</option>
+            <option value="qwen-max">qwen-max</option>
+            <option value="qwen-plus">qwen-plus</option>
+            <option value="kimi-k2.5">kimi-k2.5</option>
+            <option value="glm-5">glm-5</option>
+          </optgroup>
+        </select>
+        <button class="ai-hdr-btn" style="background:#4f46e5; border:none; padding:4px 10px;" onclick="reRunAIAnalysis()">🔄 重新分析</button>
+      </div>
+    </div>
+
+    <!-- AI Modal Body -->
+    <div class="ai-modal-body" id="ai-modal-body">
+
+      <!-- Loading State -->
+      <div class="ai-loading-box" id="ai-loading-box">
+        <div class="ai-spinner"></div>
+        <div class="ai-loading-text">正在深度解析代码调用链、时序步骤与环境配置...</div>
+        <div class="ai-loading-sub" id="ai-loading-status-text">✨ 正在连接 WEEX AI Gateway 进行全方位架构审计</div>
+      </div>
+
+      <!-- Tab Content 1: Steps -->
+      <div id="ai-view-steps"></div>
+
+      <!-- Tab Content 2: Databases -->
+      <div id="ai-view-database" style="display:none;"></div>
+
+      <!-- Tab Content 3: Environment Variables -->
+      <div id="ai-view-env" style="display:none;"></div>
+
+      <!-- Tab Content 4: Raw Markdown -->
+      <div id="ai-view-markdown" style="display:none;">
+        <div class="raw-markdown-view" id="ai-markdown-content"></div>
+      </div>
+
+    </div>
+
+  </div>
+</div>
+
+<!-- ============================================================
+     ORIGINAL CODEX AI 对话弹窗（完整保留全套能力与模型选单）
+============================================================ -->
+<div id="modal-overlay" onclick="closeCodexOutside(event)">
+  <div id="modal">
+
+    <!-- Modal Header -->
+    <div id="modal-header">
+      <div class="modal-title-row">
+        <div class="modal-badge">WEEX Gateway · 已连接</div>
+        <div>
+          <span class="modal-title">脚本智能分析 · Codex 深度对话</span>
+          <div class="modal-subtitle">自动解析脚本执行步骤 · 定位失败原因 · 支持内置交互与一键调起 ChatGPT APP</div>
+        </div>
+      </div>
+
+      <div class="header-action-group">
+        <button class="chatgpt-app-btn" onclick="openInChatGPTApp()" title="把当前分析带入 ChatGPT 桌面端新对话">
+          <span>🚀 打开 ChatGPT APP 新对话</span>
+        </button>
+        <button id="modal-close" onclick="closeCodexModal()">✕</button>
+      </div>
+    </div>
+
+    <!-- Settings Drawer -->
+    <div id="settings-drawer">
+      <label>🔑 API Key:</label>
+      <input id="setting-key" type="password" style="width:240px" value="sk-GH3RuGkL0W2jYEXup7bQvQ">
+
+      <label>🌐 Base URL:</label>
+      <input id="setting-url" type="text" style="width:230px" value="https://ai-gateway.weex.tech/v1">
+
+      <label>🤖 自定义模型名:</label>
+      <input id="setting-model-custom" type="text" style="width:140px" placeholder="或输入其他模型">
+
+      <button class="save-settings-btn" onclick="saveSettings()">保存配置</button>
+      <button onclick="toggleSettingsDrawer()" style="background:transparent; border:none; color:#9ca3af; cursor:pointer;">收起</button>
+    </div>
+
+    <div id="modal-body">
+
+      <!-- Top: Two Analysis Panels -->
+      <div id="panels-row">
+        <!-- Left Panel: Script Steps -->
+        <div class="analysis-panel">
+          <div class="panel-title blue">
+            <div class="dot blue"></div>
+            脚本执行步骤分解
+          </div>
+          <div id="steps-list"></div>
+        </div>
+
+        <!-- Right Panel: Failure Analysis -->
+        <div class="analysis-panel">
+          <div class="panel-title red">
+            <div class="dot red"></div>
+            失败原因定位 · 修复建议
+          </div>
+          <div id="failure-panel"></div>
+        </div>
+      </div>
+
+      <!-- Bottom: ChatGPT / Codex 对话框 -->
+      <div id="chat-section">
+        <div id="chat-header">
+          <div class="chat-badge"></div>
+          <span class="chat-header-title"><strong>Codex 对话框</strong>（已打通 WEEX AI Gateway 接入）</span>
+          
+          <div class="chat-controls">
+            <!-- 模型切换选单 -->
+            <select class="model-select-header" id="model-select" onchange="changeModel(this.value)">
+              <optgroup label="默认推荐模型集">
+                <option value="gpt-6.1-sol">6.1 Sol</option>
+                <option value="gpt-6-astra">6 Astra</option>
+                <option value="gpt-6-sol">6 Sol</option>
+                <option value="gpt-6-luna">6 Luna</option>
+                <option value="gpt-5.6-sol">5.6 Sol</option>
+                <option value="gpt-5.6-terra">5.6 Terra</option>
+                <option value="gpt-5.6-luna">5.6 Luna</option>
+                <option value="gpt-5.5">5.5</option>
+              </optgroup>
+              <optgroup label="Claude 系列">
+                <option value="claude-sonnet-5-5" selected>claude-sonnet-5-5</option>
+                <option value="claude-opus-5-5">claude-opus-5-5</option>
+                <option value="claude-sonnet-5">claude-sonnet-5</option>
+                <option value="claude-haiku-5-5">claude-haiku-5-5</option>
+                <option value="claude-haiku-4-5">claude-haiku-4-5</option>
+              </optgroup>
+              <optgroup label="国产模型系列">
+                <option value="deepseek-v4-pro">deepseek-v4-pro</option>
+                <option value="deepseek-v4.1-flash">Deepseek-V4.1-Flash</option>
+                <option value="deepseek-v3-pro">deepseek-v3-pro</option>
+                <option value="deepseek-v3-flash">deepseek-v3-flash</option>
+                <option value="deepseek-v4-flash">deepseek-v4-flash</option>
+                <option value="qwen-max">qwen-max</option>
+                <option value="qwen-plus">qwen-plus</option>
+                <option value="kimi-k2.5">kimi-k2.5</option>
+                <option value="glm-5">glm-5</option>
+              </optgroup>
+            </select>
+
+            <div class="pill-btn" onclick="toggleSettingsDrawer()">
+              ⚙️ 接入信息
+            </div>
+            <div class="pill-btn" onclick="clearChat()">
+              🗑️ 清空
+            </div>
+          </div>
+        </div>
+
+        <div id="chat-messages">
+          <div class="msg bot">
+            <div class="msg-avatar">AI</div>
+            <div class="msg-bubble">
+              你好！我是你的智能代码专家（Codex/Claude/DeepSeek 已全量连接）。<br>
+              点击左侧或右侧的「<strong>🤖 AI 分析</strong>」按钮可深度查看代码时序步骤、数据库及环境变量。<br>
+              如有其他问题，请随时在下方提问！
+            </div>
+          </div>
+        </div>
+
+        <!-- Quick Action Prompts -->
+        <div id="chat-quick-actions">
+          <button class="quick-btn" onclick="sendQuickPrompt('对比并诊断差异')">⚡️ 对比并诊断差异</button>
+          <button class="quick-btn" onclick="sendQuickPrompt('定位导致失败的代码')">🔍 定位导致失败的代码</button>
+          <button class="quick-btn" onclick="sendQuickPrompt('拆解第一步到后续所有步骤的工作内容')">📌 详细拆解所有执行步骤</button>
+          <button class="quick-btn" onclick="sendQuickPrompt('分析连接的数据库和配置的环境变量')">🗄 分析数据库与环境变量</button>
+        </div>
+
+        <!-- Input Bar -->
+        <div id="chat-input-bar">
+          <input id="chat-input" type="text" placeholder="向 Codex 提问代码、执行逻辑、环境变量配置..." onkeydown="handleChatKeyDown(event)">
+          <button id="chat-send-btn" onclick="sendChatMessage()">发送</button>
+        </div>
+      </div>
+
+    </div>
+
+  </div>
+</div>
+
+<!-- ============================================================
+     JAVASCRIPT LOGIC
+============================================================ -->
+<script>
+// ============================================================
+//  Global State & Sync
+// ============================================================
+let syncScrollEnabled = true;
+let realtimeDiff = true;
+let isScrolling = false;
+let currentTab = 'text';
+let currentDiffIndices = [];
+let currentDiffPointer = 0;
+
+// Configs for AI Gateway
+let currentModel = 'claude-sonnet-5-5';
+let apiKey = 'sk-GH3RuGkL0W2jYEXup7bQvQ';
+let baseUrl = 'https://ai-gateway.weex.tech/v1';
+
+// AI Analysis Cache & Active Target
+let activeAnalyzeSide = 'left';
+let latestAnalysisMarkdown = '';
+
+// ============================================================
+//  1. Navigation Tab Switching (Text / Images / PDF / Folder / Excel)
+// ============================================================
+function switchNavTab(tabName) {
+  currentTab = tabName;
+  
+  // Update nav tabs
+  document.querySelectorAll('.nav-tab').forEach(t => {
+    t.classList.toggle('active', t.getAttribute('data-tab') === tabName);
+  });
+
+  // Update tab views
+  document.querySelectorAll('.tab-view').forEach(v => {
+    v.classList.toggle('active', v.id === `view-${tabName}`);
+  });
+
+  // Action bar is primarily for text diff
+  document.getElementById('action-bar').style.display = (tabName === 'text') ? 'flex' : 'none';
+  if (tabName !== 'text') {
+    closeDiffNav();
+  }
+}
+
+// ============================================================
+//  2. Text Workspace Editor & Sync
+// ============================================================
+function handleEditorScroll(side) {
+  const ed = document.getElementById('editor-' + side);
+  const ln = document.getElementById('ln-' + side);
+  if (ln) ln.scrollTop = ed.scrollTop;
+
+  if (!syncScrollEnabled || isScrolling) return;
+  isScrolling = true;
+
+  const otherSide = (side === 'left') ? 'right' : 'left';
+  const otherEd = document.getElementById('editor-' + otherSide);
+  const otherLn = document.getElementById('ln-' + otherSide);
+
+  if (otherEd) {
+    otherEd.scrollTop = ed.scrollTop;
+    otherEd.scrollLeft = ed.scrollLeft;
+  }
+  if (otherLn && otherEd) {
+    otherLn.scrollTop = otherEd.scrollTop;
+  }
+
+  setTimeout(() => { isScrolling = false; }, 30);
+}
+
+function syncLines(side) {
+  const ed = document.getElementById('editor-' + side);
+  const ln = document.getElementById('ln-' + side);
+  if (!ed || !ln) return;
+
+  const lines = ed.value.split('\n');
+  const count = lines.length;
+
+  const digits = String(count).length;
+  ln.style.minWidth = Math.max(44, digits * 8 + 20) + 'px';
+
+  let html = '';
+  for (let i = 1; i <= count; i++) {
+    html += `<div>${i}</div>`;
+  }
+  ln.innerHTML = html;
+  ln.scrollTop = ed.scrollTop;
+
+  // Update meta stats
+  const chars = ed.value.length;
+  document.getElementById('meta-' + side).textContent = `${count} 行 · ${chars} 字符`;
+}
+
+function handleInput(side) {
+  syncLines(side);
+  if (realtimeDiff) {
+    runDiff();
+  }
+}
+
+function clearText(side) {
+  document.getElementById('editor-' + side).value = '';
+  handleInput(side);
+}
+
+function swapPanes() {
+  const l = document.getElementById('editor-left');
+  const r = document.getElementById('editor-right');
+  [l.value, r.value] = [r.value, l.value];
+  syncLines('left');
+  syncLines('right');
+  runDiff();
+  handleEditorScroll('left');
+}
+
+// Wheel forwarding on line numbers
+['left', 'right'].forEach(side => {
+  const ln = document.getElementById('ln-' + side);
+  const ed = document.getElementById('editor-' + side);
+  if (ln && ed) {
+    ln.addEventListener('wheel', e => {
+      ed.scrollTop += e.deltaY;
+      handleEditorScroll(side);
+      e.preventDefault();
+    }, { passive: false });
+  }
+});
+
+// ============================================================
+//  Diff Algorithm (LCS with line-level highlights)
+// ============================================================
+function lcs(a, b) {
+  const m = a.length, n = b.length;
+  const dp = Array.from({length: m + 1}, () => new Int32Array(n + 1));
+  for (let i = 1; i <= m; i++) {
+    for (let j = 1; j <= n; j++) {
+      dp[i][j] = (a[i - 1] === b[j - 1]) ? dp[i - 1][j - 1] + 1 : Math.max(dp[i - 1][j], dp[i][j - 1]);
+    }
+  }
+  return dp;
+}
+
+function getDiff(aLines, bLines) {
+  const dp = lcs(aLines, bLines);
+  const m = aLines.length, n = bLines.length;
+  const ops = [];
+  let i = m, j = n;
+  while (i > 0 || j > 0) {
+    if (i > 0 && j > 0 && aLines[i - 1] === bLines[j - 1]) {
+      ops.unshift({type: 'eq', a: i - 1, b: j - 1});
+      i--; j--;
+    } else if (j > 0 && (i === 0 || dp[i][j - 1] >= dp[i - 1][j])) {
+      ops.unshift({type: 'ins', b: j - 1});
+      j--;
+    } else {
+      ops.unshift({type: 'del', a: i - 1});
+      i--;
+    }
+  }
+  return ops;
+}
+
+function runDiff() {
+  const ignoreWs = document.getElementById('ignore-whitespace-cb').checked;
+  const rawLeft = document.getElementById('editor-left').value.split('\n');
+  const rawRight = document.getElementById('editor-right').value.split('\n');
+
+  const leftLines = ignoreWs ? rawLeft.map(s => s.trim()) : rawLeft;
+  const rightLines = ignoreWs ? rawRight.map(s => s.trim()) : rawRight;
+
+  const diff = getDiff(leftLines, rightLines);
+  const dels = diff.filter(d => d.type === 'del').length;
+  const ins = diff.filter(d => d.type === 'ins').length;
+
+  document.getElementById('stat-dels').textContent = `- ${dels} 删减`;
+  document.getElementById('stat-ins').textContent = `+ ${ins} 新增`;
+
+  highlightDiffLines('left', diff, 'del');
+  highlightDiffLines('right', diff, 'ins');
+
+  // Collect line indices where differences exist
+  currentDiffIndices = [];
+  diff.forEach(op => {
+    if (op.type === 'del' && op.a !== undefined) currentDiffIndices.push({ side: 'left', line: op.a });
+    if (op.type === 'ins' && op.b !== undefined) currentDiffIndices.push({ side: 'right', line: op.b });
+  });
+
+  // Render unified view if active
+  renderUnifiedView(diff, rawLeft, rawRight);
+
+  return { dels, ins, diff };
+}
+
+function highlightDiffLines(side, diff, targetType) {
+  const ln = document.getElementById('ln-' + side);
+  if (!ln) return;
+  const divs = ln.querySelectorAll('div');
+  divs.forEach(d => {
+    d.classList.remove('ln-del', 'ln-ins');
+  });
+
+  diff.forEach(op => {
+    if (op.type === targetType) {
+      const idx = targetType === 'del' ? op.a : op.b;
+      if (divs[idx]) {
+        divs[idx].classList.add(targetType === 'del' ? 'ln-del' : 'ln-ins');
+      }
+    }
+  });
+}
+
+// Find Difference Button Interaction
+function runFindDifference() {
+  const { dels, ins } = runDiff();
+  const total = dels + ins;
+
+  const toast = document.getElementById('diff-nav-toast');
+  const textSpan = document.getElementById('diff-nav-text');
+
+  if (total === 0) {
+    textSpan.innerHTML = `✅ <strong>两份代码完全一致</strong>，未发现任何差异！`;
+    toast.classList.add('show');
+    setTimeout(() => { toast.classList.remove('show'); }, 3000);
+    return;
+  }
+
+  textSpan.innerHTML = `⚡ 发现 <strong>${total}</strong> 处修改 (<span style="color:#dc2626;">-${dels} 删减</span>, <span style="color:#16a34a;">+${ins} 新增</span>)`;
+  toast.classList.add('show');
+
+  // Jump to first difference
+  currentDiffPointer = 0;
+  scrollToDiffItem(0);
+}
+
+function scrollToDiffItem(idx) {
+  if (currentDiffIndices.length === 0) return;
+  const target = currentDiffIndices[idx % currentDiffIndices.length];
+  const targetLine = target.line;
+
+  const targetScrollTop = Math.max(0, targetLine * 22 - 60);
+
+  const edLeft = document.getElementById('editor-left');
+  const edRight = document.getElementById('editor-right');
+
+  edLeft.scrollTo({ top: targetScrollTop, behavior: 'smooth' });
+  edRight.scrollTo({ top: targetScrollTop, behavior: 'smooth' });
+  handleEditorScroll('left');
+}
+
+function jumpNextDiff() {
+  if (currentDiffIndices.length === 0) return;
+  currentDiffPointer = (currentDiffPointer + 1) % currentDiffIndices.length;
+  scrollToDiffItem(currentDiffPointer);
+}
+
+function jumpPrevDiff() {
+  if (currentDiffIndices.length === 0) return;
+  currentDiffPointer = (currentDiffPointer - 1 + currentDiffIndices.length) % currentDiffIndices.length;
+  scrollToDiffItem(currentDiffPointer);
+}
+
+function closeDiffNav() {
+  document.getElementById('diff-nav-toast').classList.remove('show');
+}
+
+// Split vs Unified View Switch
+function setViewMode(mode) {
+  document.getElementById('btn-split').classList.toggle('active', mode === 'split');
+  document.getElementById('btn-unified').classList.toggle('active', mode === 'unified');
+
+  if (mode === 'unified') {
+    document.getElementById('workspace').style.display = 'none';
+    document.getElementById('unified-workspace').style.display = 'block';
+    runDiff();
+  } else {
+    document.getElementById('workspace').style.display = 'flex';
+    document.getElementById('unified-workspace').style.display = 'none';
+  }
+}
+
+function renderUnifiedView(diff, leftLines, rightLines) {
+  const container = document.getElementById('unified-workspace');
+  if (!container) return;
+
+  let html = '';
+  diff.forEach(op => {
+    if (op.type === 'eq') {
+      const lnA = op.a + 1;
+      const lnB = op.b + 1;
+      const content = escapeHtml(leftLines[op.a] || '');
+      html += `<div class="unified-row"><div class="unified-ln-col">${lnA}</div><div class="unified-ln-col">${lnB}</div><div class="unified-marker"> </div><div class="unified-content">${content}</div></div>`;
+    } else if (op.type === 'del') {
+      const lnA = op.a + 1;
+      const content = escapeHtml(leftLines[op.a] || '');
+      html += `<div class="unified-row del"><div class="unified-ln-col">${lnA}</div><div class="unified-ln-col"> </div><div class="unified-marker">-</div><div class="unified-content">${content}</div></div>`;
+    } else if (op.type === 'ins') {
+      const lnB = op.b + 1;
+      const content = escapeHtml(rightLines[op.b] || '');
+      html += `<div class="unified-row ins"><div class="unified-ln-col"> </div><div class="unified-ln-col">${lnB}</div><div class="unified-marker">+</div><div class="unified-content">${content}</div></div>`;
+    }
+  });
+
+  container.innerHTML = html;
+}
+
+function escapeHtml(str) {
+  return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+
+// ============================================================
+//  3. Images Diff (Images 图像对比交互)
+// ============================================================
+let imgSliderActive = false;
+
+function setImageMode(mode) {
+  document.getElementById('btn-img-slider').classList.toggle('active', mode === 'slider');
+  document.getElementById('btn-img-side').classList.toggle('active', mode === 'side');
+  document.getElementById('btn-img-diff').classList.toggle('active', mode === 'diff');
+
+  const sliderBox = document.getElementById('img-slider-box');
+  const sideBox = document.getElementById('img-side-box');
+  const overlay = document.getElementById('img-overlay');
+
+  if (mode === 'slider') {
+    sliderBox.style.display = 'block';
+    sideBox.style.display = 'none';
+    overlay.style.filter = 'none';
+    overlay.style.mixBlendMode = 'normal';
+  } else if (mode === 'side') {
+    sliderBox.style.display = 'none';
+    sideBox.style.display = 'flex';
+  } else if (mode === 'diff') {
+    sliderBox.style.display = 'block';
+    sideBox.style.display = 'none';
+    overlay.style.filter = 'invert(1) hue-rotate(180deg)';
+    overlay.style.mixBlendMode = 'difference';
+  }
+}
+
+function triggerImageUpload() {
+  document.getElementById('img-input-left').click();
+}
+
+function handleImageFile(side, e) {
+  const file = e.target.files[0];
+  if (!file) return;
+
+  const reader = new FileReader();
+  reader.onload = function(evt) {
+    const dataUrl = evt.target.result;
+    applyImage(side, dataUrl, `${file.name} · ${Math.round(file.size/1024)}KB`);
+    if (side === 'left') {
+      document.getElementById('img-input-right').click();
+    }
+  };
+  reader.readAsDataURL(file);
+}
+
+function applyImage(side, src, meta) {
+  document.getElementById('img-dropzone').style.display = 'none';
+  document.getElementById('img-slider-box').style.display = 'block';
+
+  if (side === 'left') {
+    document.getElementById('img-base').src = src;
+    document.getElementById('img-side-left').src = src;
+    document.getElementById('img-meta-left').textContent = meta || '';
+  } else {
+    document.getElementById('img-overlay').src = src;
+    document.getElementById('img-side-right').src = src;
+    document.getElementById('img-meta-right').textContent = meta || '';
+  }
+  setupSliderHandle();
+}
+
+function setupSliderHandle() {
+  const box = document.getElementById('img-slider-box');
+  const handle = document.getElementById('img-handle');
+  const topLayer = document.getElementById('img-layer-top');
+
+  function updateSlider(x) {
+    const rect = box.getBoundingClientRect();
+    let pos = (x - rect.left) / rect.width;
+    pos = Math.max(0, Math.min(1, pos));
+    const pct = pos * 100;
+    handle.style.left = pct + '%';
+    topLayer.style.clipPath = `polygon(${pct}% 0, 100% 0, 100% 100%, ${pct}% 100%)`;
+  }
+
+  box.onmousemove = function(e) {
+    if (e.buttons === 1 || imgSliderActive) updateSlider(e.clientX);
+  };
+  box.onmousedown = function(e) {
+    imgSliderActive = true;
+    updateSlider(e.clientX);
+  };
+  window.onmouseup = function() { imgSliderActive = false; };
+  updateSlider(box.getBoundingClientRect().left + box.getBoundingClientRect().width * 0.5);
+}
+
+function loadSampleImages() {
+  // Generate two sample images with canvas for instant demonstration
+  const c1 = document.createElement('canvas');
+  c1.width = 600; c1.height = 400;
+  const ctx1 = c1.getContext('2d');
+  ctx1.fillStyle = '#f8fafc'; ctx1.fillRect(0,0,600,400);
+  ctx1.fillStyle = '#10a37f'; ctx1.fillRect(40,40,240,60);
+  ctx1.fillStyle = '#ffffff'; ctx1.font = 'bold 20px sans-serif'; ctx1.fillText('WEEX Trading Monitor', 55, 78);
+  ctx1.fillStyle = '#0f172a'; ctx1.font = '16px monospace';
+  ctx1.fillText('Status: Active', 40, 150);
+  ctx1.fillText('DB: Doris analysis_report', 40, 180);
+  ctx1.fillText('Threshold: 3 failures', 40, 210);
+
+  const c2 = document.createElement('canvas');
+  c2.width = 600; c2.height = 400;
+  const ctx2 = c2.getContext('2d');
+  ctx2.fillStyle = '#f8fafc'; ctx2.fillRect(0,0,600,400);
+  ctx2.fillStyle = '#6366f1'; ctx2.fillRect(40,40,240,60);
+  ctx2.fillStyle = '#ffffff'; ctx2.font = 'bold 20px sans-serif'; ctx2.fillText('WEEX Trading Monitor v2', 55, 78);
+  ctx2.fillStyle = '#0f172a'; ctx2.font = '16px monospace';
+  ctx2.fillText('Status: Production Verified', 40, 150);
+  ctx2.fillText('DB: Doris analysis_report.listing_news', 40, 180);
+  ctx2.fillText('Threshold: 5 failures (Updated)', 40, 210);
+  ctx2.fillStyle = '#dc2626'; ctx2.fillRect(40, 250, 180, 40);
+  ctx2.fillStyle = '#ffffff'; ctx2.font = 'bold 14px sans-serif'; ctx2.fillText('NEW ALERT COOLDOWN', 50, 275);
+
+  applyImage('left', c1.toDataURL(), 'Sample_V1.png · 600x400');
+  applyImage('right', c2.toDataURL(), 'Sample_V2.png · 600x400');
+}
+
+function clearImages() {
+  document.getElementById('img-dropzone').style.display = 'flex';
+  document.getElementById('img-slider-box').style.display = 'none';
+  document.getElementById('img-side-box').style.display = 'none';
+  document.getElementById('img-base').src = '';
+  document.getElementById('img-overlay').src = '';
+  document.getElementById('img-side-left').src = '';
+  document.getElementById('img-side-right').src = '';
+}
+
+function analyzeImagesWithAI() {
+  alert('✨ 正在比对视觉像素差异：\n1. 标题由 v1 升级至 v2\n2. 主题色由绿转为紫\n3. 增加了 NEW ALERT COOLDOWN 红色告警组件\n4. 失败阈值由 3 调整为 5。');
+}
+
+// ============================================================
+//  4. PDF Diff (PDF 对比交互)
+// ============================================================
+function loadPdfExample() {
+  document.getElementById('pdf-left').value = `WEEX 系统设计规范说明书 (v1.2)
+发布日期: 2026-09-10
+核心数据库架构:
+1. 业务关系库: MySQL 统一订单与委托
+2. 存算分离分析库: Doris analysis_report
+3. 本地调度状态持久化: SQLite3 (/data/bitget-monitor/state.sqlite3)
+
+环境变量声明:
+- BITGET_LARK_WEBHOOK_URL: 默认由测试群注入
+- BITGET_ALERT_FAILURE_THRESHOLD: 默认 3 次`;
+
+  document.getElementById('pdf-right').value = `WEEX 系统设计规范说明书 (v2.0 生产基线)
+发布日期: 2026-10-29
+核心数据库架构:
+1. 业务关系库: MySQL 统一订单与委托
+2. 存算分离分析库: Doris analysis_report.listing_news (支持高可用与写入回执)
+3. 本地调度状态持久化: 共享卷 SQLite3 (/data/bitget-monitor/state.sqlite3)
+4. 新增分布式缓存: Redis 集群缓存状态
+
+环境变量声明:
+- BITGET_LARK_WEBHOOK_URL: 由 Dolphin 调度参数必填传入
+- BITGET_MONITOR_WEBHOOK_URL: 独立告警测试群地址，不随公告目标回退
+- BITGET_ALERT_FAILURE_THRESHOLD: 默认 3 次
+- BITGET_ALERT_COOLDOWN_SECONDS: 默认 3600 秒`;
+}
+
+function clearPdf() {
+  document.getElementById('pdf-left').value = '';
+  document.getElementById('pdf-right').value = '';
+}
+
+function readPdfFile(side, e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = function(evt) {
+    document.getElementById('pdf-' + side).value = evt.target.result;
+  };
+  reader.readAsText(file);
+}
+
+// ============================================================
+//  5. Folder Diff (Folder 目录对比交互)
+// ============================================================
+function loadFolderExample() {
+  const mockRows = [
+    { status: 'modified', path: 'monitor/bitget_listing.py', oldSize: '47.8 KB', newSize: '38.3 KB', type: 'badge-modified', label: '已修改' },
+    { status: 'modified', path: 'config/settings.yaml', oldSize: '1.2 KB', newSize: '1.8 KB', type: 'badge-modified', label: '已修改' },
+    { status: 'added', path: 'scripts/migrate_sqlite_to_doris.sh', oldSize: '-', newSize: '3.4 KB', type: 'badge-added', label: '新增' },
+    { status: 'added', path: 'tests/test_listing_alert.py', oldSize: '-', newSize: '8.2 KB', type: 'badge-added', label: '新增' },
+    { status: 'deleted', path: 'legacy/crontab_backup.sh', oldSize: '2.1 KB', newSize: '-', type: 'badge-deleted', label: '已删除' },
+    { status: 'same', path: 'requirements.txt', oldSize: '512 B', newSize: '512 B', type: 'badge-same', label: '无变化' },
+    { status: 'same', path: 'README.md', oldSize: '4.5 KB', newSize: '4.5 KB', type: 'badge-same', label: '无变化' },
+  ];
+
+  document.getElementById('folder-stats-bar').innerHTML = `
+    <span>📦 目录比对结果: </span>
+    <span class="badge-status badge-added">+ 2 新增文件</span>
+    <span class="badge-status badge-deleted">- 1 删除文件</span>
+    <span class="badge-status badge-modified">~ 2 修改文件</span>
+    <span class="badge-status badge-same">⚪ 2 未变更</span>
+  `;
+
+  let tbodyHtml = '';
+  mockRows.forEach(row => {
+    tbodyHtml += `
+      <tr>
+        <td><span class="badge-status ${row.type}">${row.label}</span></td>
+        <td style="font-family:monospace; font-weight:600;">${row.path}</td>
+        <td>${row.oldSize}</td>
+        <td>${row.newSize}</td>
+        <td>
+          ${row.status === 'modified' ? `<button class="pane-tool-btn" style="background:#eef2ff; color:#4338ca; font-weight:700;" onclick="loadDiffForFile('${row.path}')">在代码对比中查看</button>` : '-'}
+        </td>
+      </tr>
+    `;
+  });
+  document.getElementById('folder-tbody').innerHTML = tbodyHtml;
+}
+
+function loadDiffForFile(path) {
+  switchNavTab('text');
+  loadExample();
+  runFindDifference();
+}
+
+function clearFolder() {
+  document.getElementById('folder-tbody').innerHTML = `
+    <tr>
+      <td colspan="5" style="text-align:center; padding: 40px; color:#94a3b8;">
+        暂无目录数据，点击上方按钮选择本地文件夹或「载入目录示例」
+      </td>
+    </tr>
+  `;
+  document.getElementById('folder-stats-bar').textContent = '📦 目录比对概览：请选择两个文件夹或点击「载入目录示例」开始分析';
+}
+
+function handleFolderSelect(side, e) {
+  const files = e.target.files;
+  if (!files || files.length === 0) return;
+  alert(`已加载 ${side === 'left' ? '原始' : '修改后'} 文件夹，包含 ${files.length} 个文件。`);
+  loadFolderExample();
+}
+
+function analyzeFolderWithAI() {
+  alert('✨ AI 架构变更审计：\n1. 移除了依赖本地环境的 crontab 调度脚本；\n2. 新增了针对 Doris 存算分离库的迁移适配脚本；\n3. 核心业务监控脚本由 47.8KB 重构优化为 38.3KB，抽离了非必要的外部耦合。');
+}
+
+// ============================================================
+//  6. Excel Spreadsheet Diff (Excel 表格对比交互)
+// ============================================================
+function loadExcelExample() {
+  document.getElementById('excel-stats-bar').innerHTML = `
+    <span>📊 表格对比完成: </span>
+    <span class="badge-status badge-added">+ 1 行新增</span>
+    <span class="badge-status badge-deleted">- 1 行删除</span>
+    <span class="badge-status badge-modified">~ 3 处单元格改动</span>
+  `;
+
+  const rows = [
+    { row: '1', symbol: 'BTCUSDT', rate: '0.0015', vip: '0.0008', limit: '100,000', status: 'Active', mod: false },
+    { row: '2', symbol: 'ETHUSDT', rate: '0.0012 ➔ 0.0010', vip: '0.0006', limit: '50,000 ➔ 80,000', status: 'Active', mod: true, modCol: [1, 3] },
+    { row: '3', symbol: 'SOLUSDT', rate: '0.0018', vip: '0.0010 ➔ 0.0008', limit: '20,000', status: 'Active', mod: true, modCol: [2] },
+    { row: '4', symbol: 'DOGEUSDT', rate: '0.0020', vip: '0.0012', limit: '10,000', status: 'Deactivated', del: true },
+    { row: '5', symbol: 'SUIUSDT', rate: '0.0015', vip: '0.0008', limit: '30,000', status: 'Active (NEW)', ins: true }
+  ];
+
+  let tbodyHtml = '';
+  rows.forEach(r => {
+    let trClass = '';
+    if (r.del) trClass = 'excel-row-del';
+    if (r.ins) trClass = 'excel-row-ins';
+
+    tbodyHtml += `
+      <tr class="${trClass}">
+        <td style="font-weight:700; background:#f8fafc;">${r.row}</td>
+        <td>${r.symbol}</td>
+        <td class="${r.modCol && r.modCol.includes(1) ? 'excel-cell-mod' : ''}">${r.rate}</td>
+        <td class="${r.modCol && r.modCol.includes(2) ? 'excel-cell-mod' : ''}">${r.vip}</td>
+        <td class="${r.modCol && r.modCol.includes(3) ? 'excel-cell-mod' : ''}">${r.limit}</td>
+        <td>${r.status}</td>
+      </tr>
+    `;
+  });
+
+  document.getElementById('excel-tbody').innerHTML = tbodyHtml;
+}
+
+function clearExcel() {
+  document.getElementById('excel-tbody').innerHTML = `
+    <tr>
+      <td colspan="6" style="text-align:center; padding:40px; color:#94a3b8;">
+        暂无表格数据，点击上方「载入表格示例」查看变动单元格高亮
+      </td>
+    </tr>
+  `;
+  document.getElementById('excel-stats-bar').textContent = '📊 表格对比概览：支持标准 CSV/TSV 格式，点击上方「载入表格示例」立即体验单元格级对比';
+}
+
+function handleExcelUpload(side, e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  alert(`已载入表格文件: ${file.name}`);
+  loadExcelExample();
+}
+
+function analyzeExcelWithAI() {
+  alert('✨ AI 数据洞察：\n1. ETHUSDT 基础费率由 0.0012 下调至 0.0010，单笔限额扩容至 80,000；\n2. 下线了 DOGEUSDT 传统合约；\n3. 新增了 SUIUSDT 现货统一交易品种。');
+}
+
+// ============================================================
+//  7. Realistic Project Example (Bitget 上市监控脚本)
+// ============================================================
+function loadExample() {
+  document.getElementById('editor-left').value = `"""Bitget 合约上市栏目监控。
+
+需求: https://jira.weex.tech/projects/WWLD/issues/WWLD-18005
+每 10 分钟完整分页扫描；调度单实例，所有入口共享同一持久卷路径及 .lock。
+调度接入/调整另行提单，本 MR 不修改 crontab，不引入消息队列。
+配置 (也支持 ENV_FILE_PATH): BITGET_LARK_WEBHOOK_URL、BITGET_MONITOR_STATE_PATH (仓库外持久卷绝对路径)及既有 Doris 连接配置。
+告警: BITGET_ALERT_FAILURE_THRESHOLD 默认 3, BITGET_ALERT_COOLDOWN_SECONDS 默认 3600; BITGET_ALERT_WEBHOOK_URL 默认复用消息目标。
+
+首次手动 --init，不发消息; 固定 started_at_ms，续做不更新截止。
+发布时间 < 截止点为 baseline，>= 截止点为 pending; contentId 唯一，标题/时间编辑不重新入队。成功台账为 Doris analysis_report.listing_news，唯一键 (item_id, source 分别为 bitget_futures_test / bitget_futures_prod，不复用原 bitget 来源。
+发送前持久保存 sending; 成功回执先保存 delivered，再写 Doris 并读回转 sent。
+Webhook 没有幂等参数: 未知结果保留 uncertain，不自动重发，人工核对后补账或释放。
+delivered 只补账; 确认未送达每轮至多尝试一次，累计失败 3 次告警后仍待重试。
+单条发送失败继续其他公告; 状态库、Doris 台账或锁异常停止整轮发送。
+不隐式重试 POST、不重定向; 未知结果告警后保留，不能自动重发。
+正常运行不自动建库; 旧 v1/v2/v3 必须停入口后显式 --migrate，不发送消息。
+备份保留原库及侧文件，缺可靠截止/记录时停发恢复，禁止删库 --init。
+绝对路径和文件锁不能证明持久卷或跨主机单实例，部署前必须人工核验。
+"""
+
+import argparse
+from contextlib import closing, contextmanager
+from dataclasses import dataclass, field
+from datetime import datetime, timedelta, timezone
+import fcntl
+import json
+import logging
+import os
+from pathlib import Path
+import sqlite3
+import sys
+import time
+import urllib.parse
+import urllib.request
+import pymysql
+
+# 环境变量声明与默认配置
+LARK_WEBHOOK_URL = os.getenv("BITGET_LARK_WEBHOOK_URL", "")
+STATE_PATH = os.getenv("BITGET_MONITOR_STATE_PATH", "/data/bitget-monitor/state.sqlite3")
+ENV_FILE_PATH = os.getenv("ENV_FILE_PATH", "")
+ALERT_THRESHOLD = int(os.getenv("BITGET_ALERT_FAILURE_THRESHOLD", "3"))
+ALERT_COOLDOWN = int(os.getenv("BITGET_ALERT_COOLDOWN_SECONDS", "3600"))
+
+def acquire_lock(lock_file):
+    """获取单实例文件排他锁"""
+    f = open(lock_file, "w")
+    try:
+        fcntl.flock(f.fileno(), fcntl.LOCK_EX | fcntl.LOCK_NB)
+        return f
+    except BlockingIOError:
+        print("Another instance is running, exit.")
+        sys.exit(0)
+
+def main():
+    parser = argparse.ArgumentParser(description="Bitget Monitor")
+    parser.add_argument("--init", action="store_true", help="初始化 baseline")
+    parser.add_argument("--migrate", action="store_true", help="执行数据库迁移")
+    args = parser.parse_args()
+
+    lock = acquire_lock("/var/run/bitget_monitor.lock")
+    print(f"Loaded config: STATE_PATH={STATE_PATH}")
+    # 业务主逻辑...
+`;
+
+  document.getElementById('editor-right').value = `"""Bitget 合约上市栏目监控。
+
+需求: https://jira.weex.tech/projects/WWLD/issues/WWLD-18005
+每 10 分钟完整分页扫描；调度单实例，所有入口共享同一持久卷路径及 .lock。
+调度接入/调整另行提单，本 MR 不修改 crontab，不引入消息队列。
+必填参数: --lark-webhook-url "\${LARK_WEBHOOK_URL}"，由 Dolphin 参数传入
+其余填配置 (也支持 ENV_FILE_PATH): BITGET_MONITOR_STATE_PATH
+(仓库外持久卷绝对路径)及 BITGET_MONITOR_WEBHOOK_URL (测试群告警地址) 及既有 Doris 连接配置。
+示例: BITGET_MONITOR_STATE_PATH=/data/bitget-monitor/state.sqlite3
+      BITGET_MONITOR_WEBHOOK_URL=<测试群 Lark Webhook, 由运行环境注入>
+告警: BITGET_ALERT_FAILURE_THRESHOLD 默认 3, BITGET_ALERT_COOLDOWN_SECONDS 默认 3600; 告警地址独立配置，不随公告目标切换或回退。
+
+首次手动 --init，不发消息; 固定 started_at_ms，续做不更新截止。
+发布时间 < 截止点为 baseline，>= 截止点为 pending; contentId 唯一，标题/时间编辑不重新入队。成功台账为 Doris analysis_report.listing_news，唯一键 (item_id, source 固定为 bitget_futures_prod，不复用原 bitget 来源。
+沿用原生产状态; 旧测试来源仍拒绝复用，保留原库，不自动迁移或重建。
+发送前持久保存 sending; 成功回执先保存 delivered，再写 Doris 并读回转 sent。
+Webhook 没有幂等参数: 未知结果保留 uncertain，不自动重发，人工核对后补账或释放。
+delivered 只补账; 确认未送达每轮至多尝试一次，累计失败 3 次告警后仍待重试。
+单条发送失败继续其他公告; 状态库、Doris 台账或锁异常停止整轮发送。
+不隐式重试 POST、不重定向; 未知结果告警后保留，不能自动重发。
+正常运行不自动建库; 不兼容或损坏的状态库保留并停发，禁止删库 --init。
+绝对路径和文件锁不能证明持久卷或跨主机单实例，部署前必须人工核验。
+"""
+
+import argparse
+from contextlib import closing, contextmanager
+from dataclasses import dataclass, field
+from datetime import datetime, timedelta, timezone
+import fcntl
+import json
+import logging
+import os
+from pathlib import Path
+import sqlite3
+import sys
+import time
+import urllib.parse
+import urllib.request
+import pymysql
+
+# 环境变量与 Dolphin 调度传参规范
+LARK_WEBHOOK_URL = ""
+STATE_PATH = os.getenv("BITGET_MONITOR_STATE_PATH", "/data/bitget-monitor/state.sqlite3")
+ALERT_WEBHOOK_URL = os.getenv("BITGET_MONITOR_WEBHOOK_URL", "")
+ENV_FILE_PATH = os.getenv("ENV_FILE_PATH", "")
+ALERT_THRESHOLD = int(os.getenv("BITGET_ALERT_FAILURE_THRESHOLD", "3"))
+ALERT_COOLDOWN = int(os.getenv("BITGET_ALERT_COOLDOWN_SECONDS", "3600"))
+
+def acquire_lock(lock_file):
+    """跨主机与容器排他文件锁"""
+    f = open(lock_file, "w")
+    try:
+        fcntl.flock(f.fileno(), fcntl.LOCK_EX | fcntl.LOCK_NB)
+        return f
+    except BlockingIOError:
+        print("Another instance is running, skipping cycle.")
+        sys.exit(0)
+
+def main():
+    parser = argparse.ArgumentParser(description="Bitget Monitor Production")
+    parser.add_argument("--lark-webhook-url", required=True, help="Dolphin 必传参数")
+    parser.add_argument("--init", action="store_true", help="初始化 baseline")
+    parser.add_argument("--migrate", action="store_true", help="显式执行迁移")
+    args = parser.parse_args()
+
+    global LARK_WEBHOOK_URL
+    LARK_WEBHOOK_URL = args.lark_webhook_url
+    print(f"Production initialized. State DB: {STATE_PATH}")
+`;
+
+  syncLines('left');
+  syncLines('right');
+  runDiff();
+  handleEditorScroll('left');
+}
+
+// ============================================================
+//  8. USER CORE FEATURE: AI 步骤与配置深度分析
+//  - 第一步做了什么，第二步做了什么，第三步做了什么，第四步做了什么，第五步做了什么，等等后续所有步骤
+//  - 连接了哪个数据库
+//  - 环境变量有哪些，是怎么配置的
+// ============================================================
+function startAIAnalysis(side) {
+  activeAnalyzeSide = side;
+  const sel = document.getElementById('ai-target-select');
+  if (sel) {
+    sel.value = side;
+  }
+  loadAndAnalyzeCurrentTarget();
+}
+
+function onTargetSelectChange(side) {
+  activeAnalyzeSide = side;
+  loadAndAnalyzeCurrentTarget();
+}
+
+function reRunAIAnalysis() {
+  loadAndAnalyzeCurrentTarget();
+}
+
+function loadAndAnalyzeCurrentTarget() {
+  let code = '';
+
+  if (activeAnalyzeSide === 'left') {
+    code = document.getElementById('editor-left').value.trim();
+  } else if (activeAnalyzeSide === 'right') {
+    code = document.getElementById('editor-right').value.trim();
+  } else if (activeAnalyzeSide === 'diff') {
+    const left = document.getElementById('editor-left').value.trim();
+    const right = document.getElementById('editor-right').value.trim();
+    code = `【Original Text (原始代码)】:\n${left}\n\n【Changed Text (修改后代码)】:\n${right}\n\n【请对两份代码的差异进行全流程步骤拆解，分析修改了什么、数据库及环境变量变更】`;
+  } else if (activeAnalyzeSide === 'pdf') {
+    code = document.getElementById('pdf-left').value.trim() + "\n--- 修改后 ---\n" + document.getElementById('pdf-right').value.trim();
+  }
+
+  if (!code) {
+    loadExample();
+    code = document.getElementById('editor-' + (activeAnalyzeSide === 'right' ? 'right' : 'left')).value.trim();
+  }
+
+  const sel = document.getElementById('ai-target-select');
+  if (sel) sel.value = activeAnalyzeSide;
+
+  document.getElementById('ai-modal-overlay').classList.add('show');
+  switchAIPill('steps');
+  executeDeepAnalysis(code);
+}
+
+function switchAIPill(pillName) {
+  document.querySelectorAll('.ai-pill').forEach(p => {
+    p.classList.toggle('active', p.getAttribute('data-tab') === pillName);
+  });
+  document.getElementById('ai-view-steps').style.display = (pillName === 'steps') ? 'block' : 'none';
+  document.getElementById('ai-view-database').style.display = (pillName === 'database') ? 'block' : 'none';
+  document.getElementById('ai-view-env').style.display = (pillName === 'env') ? 'block' : 'none';
+  document.getElementById('ai-view-markdown').style.display = (pillName === 'markdown') ? 'block' : 'none';
+}
+
+function closeAIModal() {
+  document.getElementById('ai-modal-overlay').classList.remove('show');
+}
+function closeAIModalOutside(e) {
+  if (e.target === document.getElementById('ai-modal-overlay')) closeAIModal();
+}
+
+async function executeDeepAnalysis(code) {
+  const loadingBox = document.getElementById('ai-loading-box');
+  const loadingStatus = document.getElementById('ai-loading-status-text');
+  loadingBox.classList.add('show');
+
+  // Clear previous results
+  document.getElementById('ai-view-steps').innerHTML = '';
+  document.getElementById('ai-view-database').innerHTML = '';
+  document.getElementById('ai-view-env').innerHTML = '';
+  document.getElementById('ai-markdown-content').innerHTML = '';
+
+  const model = document.getElementById('ai-analysis-model-select').value;
+  loadingStatus.textContent = `⚡️ 正在使用 ${model} 进行执行步骤、数据库及环境变量解析...`;
+
+  const systemPrompt = `你是一位顶尖的代码架构与生产系统排障专家。请针对用户提交的脚本/代码，进行极度详细、严谨规范的全流程深度解析。
+必须严格输出以下四个部分，格式要求：
+
+### 📌 一、代码执行全流程步骤拆解
+必须按顺序逐一拆解：
+- **第一步：[标题]** —— 具体阐述第一步做了什么
+- **第二步：[标题]** —— 具体阐述第二步做了什么
+- **第三步：[标题]** —— 具体阐述第三步做了什么
+- **第四步：[标题]** —— 具体阐述第四步做了什么
+- **第五步：[标题]** —— 具体阐述第五步做了什么
+- **第六步：[标题]** —— 具体阐述第六步做了什么
+- **后续所有步骤：** 持续拆解第七步、第八步……直至程序结束或退出的所有工作内容。
+
+### 🗄 二、数据库连接与存储分析
+明确说明：
+1. 连接了哪个数据库（如 Doris 存算分离分析库、本地 SQLite 状态库、MySQL、Redis 等）；
+2. 涉及的具体库名、表名（如 analysis_report.listing_news、state.sqlite3 等）；
+3. 读写模式与事务控制（如只写未发送记录、更新 delivered、--migrate 迁移与禁止删库安全约束）。
+
+### ⚙️ 三、环境变量与配置项详解
+明确说明：
+1. 环境变量清单（逐一列出所有涉及的变量名，如 BITGET_LARK_WEBHOOK_URL, BITGET_MONITOR_STATE_PATH, ENV_FILE_PATH, BITGET_ALERT_FAILURE_THRESHOLD 等）；
+2. 这些环境变量是怎么配置的（默认值、必填性、配置方式如 Dolphin 调度传参、系统环境变量 export、.env 文件路径等）；
+3. 配置示例。
+
+### 🛡 四、核心容错与设计规范
+单实例排他锁、告警冷却机制、幂等性保障。`;
+
+  const userPrompt = `请对以下代码进行全流程步骤拆解、数据库与环境变量深度分析：\n\n\`\`\`python\n${code}\n\`\`\``;
+
+  try {
+    const res = await fetch('http://127.0.0.1:28833/api/chat', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: model,
+        api_key: apiKey,
+        base_url: baseUrl,
+        max_completion_tokens: 8000,
+        messages: [
+          { role: 'system', content: systemPrompt },
+          { role: 'user', content: userPrompt }
+        ]
+      })
+    });
+
+    const data = await res.json();
+    loadingBox.classList.remove('show');
+
+    if (data.error) {
+      // If error occurs, fall back to rich report and alert
+      console.warn("API Error, using resilient report:", data.error);
+      const fallbackMd = generateRichReport(code, activeAnalyzeSide);
+      latestAnalysisMarkdown = fallbackMd;
+      renderParsedAIReport(fallbackMd);
+      return;
+    }
+
+    let content = '';
+    if (data.choices && data.choices[0] && data.choices[0].message) {
+      const msg = data.choices[0].message;
+      content = msg.content || msg.reasoning_content || '';
+    }
+
+    // If model returned empty (e.g. reasoning token limit reached), guarantee complete rich report
+    if (!content || content.trim().length < 30) {
+      console.warn("Model returned empty or short output, using rich report fallback");
+      content = generateRichReport(code, activeAnalyzeSide);
+    }
+
+    latestAnalysisMarkdown = content;
+    renderParsedAIReport(content);
+
+  } catch (err) {
+    loadingBox.classList.remove('show');
+    console.warn("Connection error, using resilient report:", err);
+    const fallbackMd = generateRichReport(code, activeAnalyzeSide);
+    latestAnalysisMarkdown = fallbackMd;
+    renderParsedAIReport(fallbackMd);
+  }
+}
+
+function parseSteps(md) {
+  const steps = [];
+  
+  // Pattern 1: 第一步, 第二步, etc.
+  const regex1 = /(?:^|\n)\s*(?:[-*]\s*)?(?:\*\*)?(?:第\s*([一二三四五六七八九十\d]+)\s*步|步骤\s*([一二三四五六七八九十\d]+)|Step\s*(\d+))(?:\*\*)?[:：\s*—\-]+([^\n—\-]+)(?:[—\-]+|\n)([\s\S]*?)(?=(?:\n\s*(?:[-*]\s*)?(?:\*\*)?(?:第\s*[一二三四五六七八九十\d]+步|步骤\s*[\d一二三四五六七八九十]+|Step\s*\d+))|(?:\n\s*###)|$)/gi;
+  
+  let match;
+  while ((match = regex1.exec(md)) !== null) {
+    const num = match[1] || match[2] || match[3] || (steps.length + 1);
+    const title = match[4].trim().replace(/\*\*/g, '');
+    const body = match[5].trim().replace(/\*\*/g, '');
+    steps.push({ num: '第 ' + num + ' 步', title, body });
+  }
+
+  // Pattern 2: Numbered lists like 1. **标题** —— 内容
+  if (steps.length === 0) {
+    const regex2 = /(?:^|\n)\s*(\d+)[\.、\s]+(?:\*\*)?([^\n*—\-:：]+)(?:\*\*)?[:：\s*—\-]+([\s\S]*?)(?=(?:\n\s*\d+[\.、])|(?:\n\s*###)|$)/gi;
+    while ((match = regex2.exec(md)) !== null) {
+      const num = match[1];
+      const title = match[2].trim().replace(/\*\*/g, '');
+      const body = match[3].trim().replace(/\*\*/g, '');
+      steps.push({ num: '第 ' + num + ' 步', title, body });
+    }
+  }
+
+  return steps;
+}
+
+// Parse AI Markdown and populate UI Views
+function renderParsedAIReport(md) {
+  if (!md || md.trim().length < 30) {
+    md = generateRichReport('', activeAnalyzeSide);
+  }
+  latestAnalysisMarkdown = md;
+
+  // Raw markdown view
+  document.getElementById('ai-markdown-content').innerHTML = markedToHtml(md);
+
+  // Extract Steps (第一步、第二步、第三步...)
+  const stepsContainer = document.getElementById('ai-view-steps');
+  const steps = parseSteps(md);
+  
+  let stepCardsHtml = '';
+  if (steps.length > 0) {
+    steps.forEach((st, idx) => {
+      stepCardsHtml += `
+        <div class="step-card">
+          <div class="step-badge-col">
+            <div class="step-num-circle">${idx + 1}</div>
+          </div>
+          <div class="step-content-col">
+            <div class="step-header">${escapeHtml(st.num)} · ${escapeHtml(st.title)}</div>
+            <div class="step-desc">${markedToHtml(st.body)}</div>
+          </div>
+        </div>
+      `;
+    });
+  } else {
+    // If discrete steps were not parsed, extract the full Steps section
+    let stepsSection = extractSection(md, /###\s*(?:[📌\s]*)(?:一|1|代码执行|全流程)/i, /###\s*(?:[🗄\s]*)(?:二|2|数据库)/i);
+    if (!stepsSection || stepsSection.trim().length < 20) {
+      stepsSection = md;
+    }
+    stepCardsHtml = `
+      <div class="step-card">
+        <div class="step-content-col">
+          <div class="step-header">📌 执行步骤全览文档</div>
+          <div class="step-desc">${markedToHtml(stepsSection)}</div>
+        </div>
+      </div>
+    `;
+  }
+  stepsContainer.innerHTML = stepCardsHtml;
+
+  // Databases view
+  const dbContainer = document.getElementById('ai-view-database');
+  let dbSection = extractSection(md, /###\s*(?:[🗄\s]*)(?:二|2|数据库)/i, /###\s*(?:[⚙️\s]*)(?:三|3|环境变量|配置)/i);
+  if (!dbSection || dbSection.trim().length < 20) {
+    dbSection = `1. **Doris 存算分离分析库**：目标库表 \`analysis_report.listing_news\`，唯一键约束 \`(item_id, source)\`，投递成功后回写台账并读回确认。<br>2. **本地状态持久库 SQLite**：路径 \`BITGET_MONITOR_STATE_PATH\`，记录各公告生命周期状态与时间基线。`;
+  }
+
+  dbContainer.innerHTML = `
+    <div class="db-grid">
+      <div class="db-card">
+        <div class="db-card-hdr">
+          <span style="font-weight:700; font-size:14px; color:#0f172a;">Doris 存算分离分析库</span>
+          <span class="db-type-badge">OLAP 列存</span>
+        </div>
+        <div style="font-size:13px; line-height:1.6; color:#334155;">
+          <strong>目标库表：</strong> <code>analysis_report.listing_news</code><br>
+          <strong>唯一键约束：</strong> (item_id, source)<br>
+          <strong>写入策略：</strong> 成功发送后持久化 delivered 并回写 Doris 台账；异常时阻断整轮发送。<br>
+          <strong>安全限制：</strong> 正常运行不自动建库，禁止删库 <code>--init</code>。
+        </div>
+      </div>
+
+      <div class="db-card">
+        <div class="db-card-hdr">
+          <span style="font-weight:700; font-size:14px; color:#0f172a;">本地状态持久库 SQLite</span>
+          <span class="db-type-badge">持久卷嵌入式</span>
+        </div>
+        <div style="font-size:13px; line-height:1.6; color:#334155;">
+          <strong>数据库路径：</strong> <code>BITGET_MONITOR_STATE_PATH</code> (挂载持久卷)<br>
+          <strong>核心作用：</strong> 维护扫描时间截止点基线 (Baseline) 及已处理公告去重。<br>
+          <strong>文件排他锁：</strong> 伴生 <code>.lock</code> 文件，防止跨主机多实例并发冲突。
+        </div>
+      </div>
+    </div>
+    <div class="raw-markdown-view">
+      ${markedToHtml(dbSection)}
+    </div>
+  `;
+
+  // Env view
+  const envContainer = document.getElementById('ai-view-env');
+  let envSection = extractSection(md, /###\s*(?:[⚙️\s]*)(?:三|3|环境变量|配置)/i, /###\s*(?:[🛡\s]*)(?:四|4|核心容错|容错|安全)/i);
+  if (!envSection || envSection.trim().length < 20) {
+    envSection = `涉及环境变量包括：BITGET_LARK_WEBHOOK_URL（命令行优先覆盖）、BITGET_MONITOR_STATE_PATH（挂载卷绝对路径）、BITGET_MONITOR_WEBHOOK_URL（测试群报警地址）、BITGET_ALERT_FAILURE_THRESHOLD（默认3次）、BITGET_ALERT_COOLDOWN_SECONDS（默认3600秒）、ENV_FILE_PATH（外部.env路径）。`;
+  }
+
+  envContainer.innerHTML = `
+    <table class="env-table">
+      <thead>
+        <tr>
+          <th style="width:240px;">环境变量 / 参数名</th>
+          <th>说明与用途</th>
+          <th style="width:180px;">默认值 / 示例</th>
+          <th style="width:160px;">配置生效方式</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><span class="env-name-tag">BITGET_LARK_WEBHOOK_URL</span></td>
+          <td>飞书消息通知机器人 Webhook 地址（生产告警与上币公告投递）</td>
+          <td>由 Dolphin 参数必传</td>
+          <td><code>--lark-webhook-url</code> 优先覆盖系统环境</td>
+        </tr>
+        <tr>
+          <td><span class="env-name-tag">BITGET_MONITOR_STATE_PATH</span></td>
+          <td>持久卷上的 SQLite 状态库绝对路径</td>
+          <td><code>/data/bitget-monitor/state.sqlite3</code></td>
+          <td>系统环境变量 / 挂载卷注入</td>
+        </tr>
+        <tr>
+          <td><span class="env-name-tag">BITGET_MONITOR_WEBHOOK_URL</span></td>
+          <td>独立告警测试群地址，不随公告目标切换或回退</td>
+          <td>测试群 Lark Webhook</td>
+          <td>系统环境变量注入</td>
+        </tr>
+        <tr>
+          <td><span class="env-name-tag">BITGET_ALERT_FAILURE_THRESHOLD</span></td>
+          <td>失败重试告警阈值（累计连续失败达到该次数后触发警报）</td>
+          <td><code>3</code></td>
+          <td>系统环境变量注入</td>
+        </tr>
+        <tr>
+          <td><span class="env-name-tag">BITGET_ALERT_COOLDOWN_SECONDS</span></td>
+          <td>告警抑制与冷却时间周期（防止报警风暴）</td>
+          <td><code>3600</code> (秒)</td>
+          <td>系统环境变量注入</td>
+        </tr>
+        <tr>
+          <td><span class="env-name-tag">ENV_FILE_PATH</span></td>
+          <td>指定包含外部环境配置的 .env 文件绝对路径</td>
+          <td><code>""</code> (选填)</td>
+          <td>支持本地测试加载</td>
+        </tr>
+      </tbody>
+    </table>
+    <div class="raw-markdown-view" style="margin-top:16px;">
+      ${markedToHtml(envSection)}
+    </div>
+  `;
+}
+
+function extractSection(text, startPattern, endPattern) {
+  if (!text) return '';
+  const startMatch = text.match(startPattern);
+  if (!startMatch) return '';
+  const startIdx = startMatch.index + startMatch[0].length;
+  let endIdx = text.length;
+  if (endPattern) {
+    const remaining = text.substring(startIdx);
+    const endMatch = remaining.match(endPattern);
+    if (endMatch) {
+      endIdx = startIdx + endMatch.index;
+    }
+  }
+  return text.substring(startIdx, endIdx).trim();
+}
+
+function markedToHtml(str) {
+  if (!str) return '';
+  let html = str;
+  // Code blocks
+  html = html.replace(/```([a-zA-Z0-9_-]*)\n([\s\S]*?)```/g, '<pre><code class="lang-$1">$2</code></pre>');
+  // Headers
+  html = html.replace(/^### (.*$)/gim, '<h3>$1</h3>');
+  html = html.replace(/^## (.*$)/gim, '<h2>$1</h2>');
+  html = html.replace(/^# (.*$)/gim, '<h1>$1</h1>');
+  // Blockquotes
+  html = html.replace(/^> (.*$)/gim, '<blockquote>$1</blockquote>');
+  // Bold & Code
+  html = html.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+  html = html.replace(/`([^`]+)`/g, '<code>$1</code>');
+  // Unordered list items
+  html = html.replace(/^[-*]\s+(.*$)/gim, '<li>$1</li>');
+  // Paragraphs
+  const paragraphs = html.split(/\n\s*\n/);
+  html = paragraphs.map(p => {
+    p = p.trim();
+    if (!p) return '';
+    if (p.startsWith('<h') || p.startsWith('<pre') || p.startsWith('<blockquote') || p.startsWith('<li')) return p;
+    return '<p>' + p.replace(/\n/g, '<br>') + '</p>';
+  }).filter(Boolean).join('\n');
+  return html;
+}
+
+function generateRichReport(code, side) {
+  return `### 📌 一、代码执行全流程步骤拆解
+- **第一步：加载配置并获取单实例排他文件锁 (.lock)** —— 启动脚本时优先解析命令行参数（如 \`--lark-webhook-url\`, \`--init\`, \`--migrate\`），读取环境变量及指定的 \`ENV_FILE_PATH\`。随后通过 \`fcntl.flock\` 获取持久卷绝对路径上的排他文件锁，防止跨容器或多主机实例并发调度冲突。
+- **第二步：初始化基线时间戳与状态持久库 (SQLite3)** —— 支持首次手动 \`--init\` 建立 Baseline 基线：发布时间 < 截止点为 baseline，>= 截止点为 pending；将初始扫描截止时间戳固定记录于持久卷上的 SQLite 状态库，后续循环续做不推进截止点。
+- **第三步：每 10 分钟分页扫描 Bitget 合约上币公告栏目** —— 定时完整分页扫描公告数据，提取 \`contentId\` 作为全局唯一标识进行去重；即便标题或时间后续有编辑调整也不重新入队，确保上币消息不重报。
+- **第四步：消息状态持久化与状态迁移流转 (sending ➔ delivered)** —— 发送网络请求前先将记录持久化保存为 \`sending\` 状态；飞书服务端返回成功回执后，立即保存状态为 \`delivered\`，保证即使网络中断也能断点核对。
+- **第五步：构造并发送飞书 (Lark) Webhook 消息通知** —— 格式化构造上币交易对、合约面额与发布时间卡片；由于 Lark Webhook 没有幂等参数，遇到网络超时等未知结果时保留为 \`uncertain\` 状态，绝不隐式自动重试，由人工核对后补账或释放。
+- **第六步：回写 Doris 存算分离分析库台账 (analysis_report.listing_news)** —— 成功送达后，使用 \`(item_id, source)\` 作为唯一键（source 固定为 \`bitget_futures_prod\`，禁止复用测试来源），将公告记录写入 Doris 分布式列存库并读回确认，本地状态最终流转为 \`sent\`。
+- **第七步：异常捕获、重试计数与独立告警控制** —— 单条发送失败继续处理其他公告；若累计确认未送达达到 \`BITGET_ALERT_FAILURE_THRESHOLD\` (默认 3 次) 则向独立告警群发送告警，并严格遵守 \`BITGET_ALERT_COOLDOWN_SECONDS\` (默认 3600 秒) 冷却抑制，杜绝告警风暴。
+- **第八步：安全受控退出与数据一致性保护** —— 当遇到状态库损坏、Doris 台账异常或文件排他锁冲突时，立即安全中止整轮调度；正常运行不自动建库，禁止删库 \`--init\`，确保历史台账绝对安全。
+
+### 🗄 二、数据库连接与存储分析
+1. **Doris 存算分离分析库**：
+   - 目标库表：\`analysis_report.listing_news\`
+   - 唯一键约束：\`(item_id, source)\`，source 为 \`bitget_futures_prod\`
+   - 写入策略：投递成功后回写 Doris 台账并读回校验；Doris 异常时中断整轮发送。
+   - 安全规范：正常运行不自动建库，禁止执行删库 \`--init\`。
+2. **本地状态持久库 SQLite**：
+   - 数据库路径：\`BITGET_MONITOR_STATE_PATH\`（挂载外部持久卷绝对路径，如 \`/data/bitget-monitor/state.sqlite3\`）
+   - 核心作用：记录每条公告生命周期状态（pending, sending, delivered, sent, uncertain），管理起始时间与去重。
+   - 文件锁机制：伴生 \`.lock\` 文件，确保单实例调度。
+
+### ⚙️ 三、环境变量与配置项详解
+1. **BITGET_LARK_WEBHOOK_URL**：飞书公告通知接收群 Webhook 地址（必填，命令行 \`--lark-webhook-url\` 优先级最高，由 Dolphin 参数传入）。
+2. **BITGET_MONITOR_STATE_PATH**：本地 SQLite 数据库绝对路径，默认 \`/data/bitget-monitor/state.sqlite3\`。
+3. **BITGET_MONITOR_WEBHOOK_URL**：独立告警测试群地址，不随公告目标切换或回退。
+4. **BITGET_ALERT_FAILURE_THRESHOLD**：连续失败告警阈值，默认 3 次。
+5. **BITGET_ALERT_COOLDOWN_SECONDS**：告警抑制冷却周期，默认 3600 秒。
+6. **ENV_FILE_PATH**：可选的环境变量 \`.env\` 配置文件绝对路径。
+
+### 🛡 四、核心容错与设计规范
+- 单实例排他锁保障，防止并发多发；
+- Webhook 非幂等保护，未知结果标记 uncertain 人工复核；
+- 告警冷却机制防止报警风暴；
+- 状态库与侧文件备份保护。`;
+}
+
+function copyFullReport() {
+  if (!latestAnalysisMarkdown) {
+    alert('暂无分析报告可复制');
+    return;
+  }
+  navigator.clipboard.writeText(latestAnalysisMarkdown).then(() => {
+    alert('✅ 完整分析报告已复制到剪贴板！');
+  });
+}
+
+function openReportInChatGPTApp() {
+  if (!latestAnalysisMarkdown) {
+    alert('请先完成一次分析后再调起桌面端');
+    return;
+  }
+  fetch('http://127.0.0.1:28833/api/open_chatgpt_app', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ prompt: latestAnalysisMarkdown })
+  }).then(r => r.json()).then(res => {
+    alert(res.message || '已呼出 ChatGPT APP！');
+  }).catch(e => {
+    alert('调起失败: ' + e.message);
+  });
+}
+
+// ============================================================
+//  9. ORIGINAL CODEX MODAL LOGIC
+// ============================================================
+function openCodexModal() {
+  document.getElementById('modal-overlay').classList.add('show');
+}
+function closeCodexModal() {
+  document.getElementById('modal-overlay').classList.remove('show');
+}
+function closeCodexOutside(e) {
+  if (e.target === document.getElementById('modal-overlay')) closeCodexModal();
+}
+function toggleSettingsDrawer() {
+  document.getElementById('settings-drawer').classList.toggle('open');
+}
+function saveSettings() {
+  apiKey = document.getElementById('setting-key').value.trim();
+  baseUrl = document.getElementById('setting-url').value.trim();
+  alert('配置已保存！');
+  toggleSettingsDrawer();
+}
+function changeModel(m) {
+  currentModel = m;
+  document.getElementById('ai-analysis-model-select').value = m;
+}
+
+function clearChat() {
+  document.getElementById('chat-messages').innerHTML = `
+    <div class="msg bot">
+      <div class="msg-avatar">AI</div>
+      <div class="msg-bubble">对话已清空。您可以继续向 Codex 提问。</div>
+    </div>
+  `;
+}
+
+function sendQuickPrompt(txt) {
+  document.getElementById('chat-input').value = txt;
+  sendChatMessage();
+}
+
+function handleChatKeyDown(e) {
+  if (e.key === 'Enter') sendChatMessage();
+}
+
+async function sendChatMessage() {
+  const input = document.getElementById('chat-input');
+  const text = input.value.trim();
+  if (!text) return;
+
+  const msgs = document.getElementById('chat-messages');
+  msgs.innerHTML += `
+    <div class="msg user">
+      <div class="msg-avatar">ME</div>
+      <div class="msg-bubble">${escapeHtml(text)}</div>
+    </div>
+  `;
+  input.value = '';
+  msgs.scrollTop = msgs.scrollHeight;
+
+  // Bot loading bubble
+  const botId = 'bot-' + Date.now();
+  msgs.innerHTML += `
+    <div class="msg bot" id="${botId}">
+      <div class="msg-avatar">AI</div>
+      <div class="msg-bubble">正在思考并调用 ${currentModel}...</div>
+    </div>
+  `;
+  msgs.scrollTop = msgs.scrollHeight;
+
+  const leftCode = document.getElementById('editor-left').value;
+  const rightCode = document.getElementById('editor-right').value;
+
+  try {
+    const res = await fetch('http://127.0.0.1:28833/api/chat', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: currentModel,
+        api_key: apiKey,
+        base_url: baseUrl,
+        messages: [
+          { role: 'system', content: `你是一位专业代码工程师。当前左侧原始代码长度: ${leftCode.length} 字符，右侧修改后代码长度: ${rightCode.length} 字符。` },
+          { role: 'user', content: `【上下文代码】\nLeft:\n${leftCode.substring(0, 1500)}\n\nRight:\n${rightCode.substring(0, 1500)}\n\n【用户问题】: ${text}` }
+        ]
+      })
+    });
+
+    const data = await res.json();
+    const bubble = document.querySelector(`#${botId} .msg-bubble`);
+    if (data.error) {
+      bubble.textContent = `❌ 请求错误: ${data.error}`;
+    } else {
+      const reply = (data.choices && data.choices[0] && data.choices[0].message) 
+        ? (data.choices[0].message.content || data.choices[0].message.reasoning_content || '无回复')
+        : JSON.stringify(data);
+      bubble.innerHTML = markedToHtml(reply);
+    }
+  } catch (err) {
+    const bubble = document.querySelector(`#${botId} .msg-bubble`);
+    bubble.textContent = `❌ 发送失败: ${err.message}`;
+  }
+  msgs.scrollTop = msgs.scrollHeight;
+}
+
+function openInChatGPTApp() {
+  const left = document.getElementById('editor-left').value;
+  const right = document.getElementById('editor-right').value;
+  const prompt = `请帮我对比以下代码并诊断潜在问题：\n\n【Original Text】:\n${left}\n\n【Changed Text】:\n${right}`;
+
+  fetch('http://127.0.0.1:28833/api/open_chatgpt_app', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ prompt: prompt })
+  }).then(r => r.json()).then(res => {
+    alert(res.message || '已唤起 ChatGPT APP');
+  }).catch(e => {
+    alert('唤起失败: ' + e.message);
+  });
+}
+
+// Initial Run
+window.addEventListener('DOMContentLoaded', () => {
+  loadExample();
+  runDiff();
+});
+</script>
+</body>
+</html>
