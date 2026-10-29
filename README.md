@@ -6,11 +6,11 @@
 
 **下一代全功能纯净代码与多格式文件对比工具 · 内置深度 AI 架构全流程审计**
 
-[![Release](https://img.shields.io/badge/Release-v1.0.0-22c55e?style=flat-square&logo=github)](https://github.com/rabby-weex/diffchecker-pro/releases)
-[![Platform](https://img.shields.io/badge/Platform-macOS%20%7C%20Windows-blue?style=flat-square&logo=apple)](https://github.com/rabby-weex/diffchecker-pro)
-[![Python](https://img.shields.io/badge/Python-3.7%2B%20(Zero--pip)-f59e0b?style=flat-square&logo=python)](https://github.com/rabby-weex/diffchecker-pro)
+[![Release](https://img.shields.io/badge/Release-v1.0.0-22c55e?style=flat-square&logo=github)](https://github.com/rocsail97/diffchecker-pro/releases)
+[![Platform](https://img.shields.io/badge/Platform-macOS%20%7C%20Windows-blue?style=flat-square&logo=apple)](https://github.com/rocsail97/diffchecker-pro)
+[![Python](https://img.shields.io/badge/Python-3.7%2B%20(Zero--pip)-f59e0b?style=flat-square&logo=python)](https://github.com/rocsail97/diffchecker-pro)
 [![License](https://img.shields.io/badge/License-MIT-6366f1?style=flat-square)](./LICENSE)
-[![No Ads](https://img.shields.io/badge/Ads-100%25%20Free-success?style=flat-square)](https://github.com/rabby-weex/diffchecker-pro)
+[![No Ads](https://img.shields.io/badge/Ads-100%25%20Free-success?style=flat-square)](https://github.com/rocsail97/diffchecker-pro)
 
 [English](./INSTALL.md#🌐-offline-and-source-execution) | [简体中文](#-快速安装) | [详细安装指南 (INSTALL.md)](./INSTALL.md)
 
@@ -37,9 +37,9 @@
 
 | 操作系统 | 推荐安装包 | 安装方式 | 运行说明 |
 | :--- | :--- | :--- | :--- |
-| **macOS** (Intel / Apple Silicon) | [**DiffCheckerPro-macOS-v1.0.0.dmg**](https://github.com/rabby-weex/diffchecker-pro/releases/download/v1.0.0/DiffCheckerPro-macOS-v1.0.0.dmg) | 双击打开 DMG，拖拽至 `Applications` | 开箱即用，原生 Dock 图标 |
-| **macOS** (绿色压缩包) | [**DiffCheckerPro-macOS-v1.0.0.zip**](https://github.com/rabby-weex/diffchecker-pro/releases/download/v1.0.0/DiffCheckerPro-macOS-v1.0.0.zip) | 解压后双击 `DiffChecker Pro.app` | 便携免安装 |
-| **Windows** (10 / 11 / Server) | [**DiffCheckerPro-Windows-v1.0.0.zip**](https://github.com/rabby-weex/diffchecker-pro/releases/download/v1.0.0/DiffCheckerPro-Windows-v1.0.0.zip) | 解压后运行 `install.bat` | 自动生成桌面快捷方式，支持 `DiffCheckerPro.vbs` 静默启动 |
+| **macOS** (Intel / Apple Silicon) | [**DiffCheckerPro-macOS-v1.0.0.dmg**](https://github.com/rocsail97/diffchecker-pro/releases/download/v1.0.0/DiffCheckerPro-macOS-v1.0.0.dmg) | 双击打开 DMG，拖拽至 `Applications` | 开箱即用，原生 Dock 图标 |
+| **macOS** (绿色压缩包) | [**DiffCheckerPro-macOS-v1.0.0.zip**](https://github.com/rocsail97/diffchecker-pro/releases/download/v1.0.0/DiffCheckerPro-macOS-v1.0.0.zip) | 解压后双击 `DiffChecker Pro.app` | 便携免安装 |
+| **Windows** (10 / 11 / Server) | [**DiffCheckerPro-Windows-v1.0.0.zip**](https://github.com/rocsail97/diffchecker-pro/releases/download/v1.0.0/DiffCheckerPro-Windows-v1.0.0.zip) | 解压后运行 `install.bat` | 自动生成桌面快捷方式，支持 `DiffCheckerPro.vbs` 静默启动 |
 
 > 提示：运行本工具仅需目标电脑具备标准 Python 3.7+ 环境（macOS 自带或通过官方安装；Windows 安装时请勾选 `Add Python to PATH`）。
 
@@ -87,7 +87,7 @@
 
 ```bash
 # 1. 克隆代码仓库
-git clone https://github.com/rabby-weex/diffchecker-pro.git
+git clone https://github.com/rocsail97/diffchecker-pro.git
 cd diffchecker-pro
 
 # 2. 启动本地服务 (纯标准库，无需 pip install)

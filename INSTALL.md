@@ -22,7 +22,7 @@
 ## 💻 macOS 用户安装指南
 
 ### 方式一：使用 DMG 安装包（推荐）
-1. 从 GitHub 仓库的 [Releases](https://github.com/rabby-weex/diffchecker-pro/releases) 页面下载 `DiffCheckerPro-macOS-v1.0.0.dmg`；
+1. 从 GitHub 仓库的 [Releases](https://github.com/rocsail97/diffchecker-pro/releases) 页面下载 `DiffCheckerPro-macOS-v1.0.0.dmg`；
 2. 双击打开 `DiffCheckerPro-macOS-v1.0.0.dmg`；
 3. 将 **`DiffChecker Pro.app`** 拖拽到右侧的 **`Applications`（应用程序）** 文件夹；
 4. 在「访达 -> 应用程序」或「聚焦搜索 (Spotlight)」中搜索 `DiffChecker Pro` 即可秒级启动！
@@ -54,7 +54,7 @@ chmod +x install.sh
 ## 🪟 Windows 用户安装指南
 
 ### 方式一：一键快捷安装（推荐）
-1. 从 GitHub 仓库的 [Releases](https://github.com/rabby-weex/diffchecker-pro/releases) 页面下载 `DiffCheckerPro-Windows-v1.0.0.zip`；
+1. 从 GitHub 仓库的 [Releases](https://github.com/rocsail97/diffchecker-pro/releases) 页面下载 `DiffCheckerPro-Windows-v1.0.0.zip`；
 2. 右键解压到任意文件夹（例如 `D:\DiffCheckerPro` 或 `C:\Tools\DiffCheckerPro`）；
 3. 进入文件夹，鼠标右键以管理员或直接双击运行 **`install.bat`**；
 4. 脚本将自动在你的 Windows 桌面上创建 **`DiffChecker Pro`** 快捷方式；
@@ -79,7 +79,7 @@ chmod +x install.sh
 
 1. 克隆代码：
    ```bash
-   git clone https://github.com/rabby-weex/diffchecker-pro.git
+   git clone https://github.com/rocsail97/diffchecker-pro.git
    cd diffchecker-pro
    ```
 2. 启动本地服务：
